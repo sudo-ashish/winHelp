@@ -27,6 +27,12 @@ Write-Host "▶ Running template validation..." -ForegroundColor Cyan
 if ($LASTEXITCODE -ne 0) { $TotalErrors++ }
 Write-Host ""
 
+# Run config validator
+Write-Host "▶ Running winHelp config validation..." -ForegroundColor Cyan
+& "$PSScriptRoot\validate-configs.ps1"
+if ($LASTEXITCODE -ne 0) { $TotalErrors++ }
+Write-Host ""
+
 # Summary
 Write-Host "╔═══════════════════════════════════════════════════════╗" -ForegroundColor Magenta
 Write-Host "║                    SUMMARY                            ║" -ForegroundColor Magenta
@@ -36,7 +42,8 @@ Write-Host ""
 if ($TotalErrors -eq 0) {
     Write-Host "✅ All validators passed!" -ForegroundColor Green
     exit 0
-} else {
+}
+else {
     Write-Host "❌ $TotalErrors validator(s) failed" -ForegroundColor Red
     exit 1
 }
