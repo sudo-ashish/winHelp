@@ -55,24 +55,38 @@ function Invoke-BackupSnapshot {
 function Get-BackupSnapshots {
     $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path $PSScriptRoot }
     $backupsDir = Join-Path $appRoot "backups"
-    if (-not (Test-Path $backupsDir)) { return @() }
 
-    try {
-        $dirs = Get-ChildItem -Path $backupsDir -Directory -Filter "*-restorepoint" | Sort-Object CreationTime -Descending
-        $results = @()
-        foreach ($d in $dirs) {
-            $results += [PSCustomObject]@{
-                Name = $d.Name
-                Path = $d.FullName
-                Date = $d.CreationTime
+    $results = @()
+
+    # User snapshots
+    if (Test-Path $backupsDir) {
+        try {
+            $dirs = Get-ChildItem -Path $backupsDir -Directory -Filter "*-restorepoint" | Sort-Object CreationTime -Descending
+            foreach ($d in $dirs) {
+                $results += [PSCustomObject]@{
+                    Name = $d.Name
+                    Path = $d.FullName
+                    Date = $d.CreationTime
+                }
             }
         }
-        return $results
+        catch {
+            Write-Log "Get-BackupSnapshots (user) failed: $_" -Level ERROR
+        }
     }
-    catch {
-        Write-Log "Get-BackupSnapshots failed: $_" -Level ERROR
-        return @()
+
+    # Bundled default snapshot (committed to repo, always available)
+    $bundledSnap = Join-Path $appRoot "snapshots\default-restorepoint"
+    if (Test-Path $bundledSnap) {
+        $results += [PSCustomObject]@{
+            Name = "default-restorepoint [bundled]"
+            Path = $bundledSnap
+            Date = [datetime]::MinValue
+        }
+        Write-Log "Bundled default snapshot detected: $bundledSnap" -Level DEBUG
     }
+
+    return $results
 }
 
 function Invoke-RestoreSnapshot {
@@ -97,9 +111,13 @@ function Invoke-RestoreSnapshot {
             if ($item.Type -eq 'registry') {
                 $srcReg = Join-Path $SnapshotPath "$($item.Id).reg"
                 if (Test-Path $srcReg) {
-                    $process = Start-Process "reg" -ArgumentList "import `"$srcReg`"" -Wait -PassThru -NoNewWindow
-                    if ($process.ExitCode -ne 0) { 
-                        Write-Log "reg import returned non-zero for $($item.Id) (some keys may be locked by system)" -Level DEBUG 
+                    # Redirect stderr to suppress known OS-locked-key noise (e.g. TaskbarStateLastRun)
+                    & reg import "$srcReg" 2>&1 | Out-Null
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Log "reg import partial for $($item.Id) (some volatile keys locked by OS — preferences still applied)" -Level DEBUG
+                    }
+                    else {
+                        Write-Log "reg import OK: $($item.Id)" -Level DEBUG
                     }
                 }
             }

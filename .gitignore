@@ -13,12 +13,12 @@ cache/
 *.dmp
 
 # ── Build / Snapshot / Backup output ─────────────────────────
+# NOTE: snapshots/ is NOT ignored — the bundled default-restorepoint is committed to the repo
 build/
 dist/
 bin/
 obj/
 backups/
-snapshots/
 
 # ── IDE / Editor ─────────────────────────────────────────────
 .vs/
