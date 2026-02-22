@@ -58,29 +58,43 @@ Set-StrictMode -Version Latest
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 
 # ── 4. REMOTE DOWNLOAD / LOCAL SETUP ─────────────────────────────────
-$RepoUrl = "https://github.com/TODO-USER/winHelp/archive/refs/heads/master.zip"
+$RepoUrl = "https://github.com/sudo-ashish/winHelp/archive/refs/heads/main.zip"
 $Global:AppRoot = $PSScriptRoot
 
-if ([string]::IsNullOrEmpty($PSCommandPath) -or -not (Test-Path (Join-Path $Global:AppRoot "ui\MainWindow.ps1"))) {
-    Write-Host "winHelp: Remote execution detected (or missing local files). Downloading..." -ForegroundColor Cyan
-    
+$mainUi = Join-Path $Global:AppRoot "ui\MainWindow.ps1"
+
+if ([string]::IsNullOrEmpty($PSCommandPath) -or -not (Test-Path $mainUi)) {
+
+    Write-Host "winHelp: Remote execution detected. Downloading project..." -ForegroundColor Cyan
+
     $destDir = "C:\winHelp"
-    $zipPath = Join-Path $env:TEMP "winHelp-master.zip"
+    $zipPath = Join-Path $env:TEMP "winHelp-main.zip"
+    $extractRoot = $env:TEMP
+    $extractedFolder = Join-Path $extractRoot "winHelp-main"
+
+    # Cleanup old install
+    if (Test-Path $destDir) {
+        Remove-Item $destDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
 
     Write-Host "Downloading repository..." -ForegroundColor DarkGray
     Invoke-WebRequest -Uri $RepoUrl -OutFile $zipPath -UseBasicParsing
-    
-    if (Test-Path $destDir) { Remove-Item -Path $destDir -Recurse -Force -ErrorAction SilentlyContinue }
-    Write-Host "Extracting to $destDir..." -ForegroundColor DarkGray
-    Expand-Archive -Path $zipPath -DestinationPath $env:TEMP -Force
-    
-    # Github zips extract into a folder named "winHelp-master"
-    $extractedFolder = Join-Path $env:TEMP "winHelp-master"
+
+    Write-Host "Extracting..." -ForegroundColor DarkGray
+    Expand-Archive -Path $zipPath -DestinationPath $extractRoot -Force
+
+    if (-not (Test-Path $extractedFolder)) {
+        throw "Extraction failed. Folder not found: $extractedFolder"
+    }
+
     Move-Item -Path $extractedFolder -Destination $destDir -Force
-    Remove-Item $zipPath -Force
+
+    Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
 
     $Global:AppRoot = $destDir
     Set-Location $destDir
+
+    Write-Host "winHelp installed to $destDir" -ForegroundColor Green
 }
 
 # ── 5. GLOBALS ────────────────────────────────────────────────────────

@@ -34,10 +34,8 @@
 ### One-shot remote (on a fresh machine)
 
 ```powershell
-irm https://raw.githubusercontent.com/<user>/winHelp/master/winHelp.ps1 | iex
+irm https://raw.githubusercontent.com/sudo-ashish/winHelp/main/winHelp.ps1 | iex
 ```
-
-Replace `<user>` with your GitHub username. The bootstrapper will:
 
 1. Detect PowerShell version — install PS7 via `winget` if needed
 2. Request Administrator elevation if not already elevated
