@@ -59,8 +59,16 @@ Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 
 # ── 4. REMOTE DOWNLOAD / LOCAL SETUP ─────────────────────────────────
 $RepoUrl = "https://github.com/sudo-ashish/winHelp/archive/refs/heads/main.zip"
-$Global:AppRoot = $PSScriptRoot
-
+if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+    $Global:AppRoot = $PSScriptRoot
+}
+elseif ($PSCommandPath) {
+    $Global:AppRoot = Split-Path -Parent $PSCommandPath
+}
+else {
+    # Fallback for irm | iex
+    $Global:AppRoot = Get-Location
+}
 $mainUi = Join-Path $Global:AppRoot "ui\MainWindow.ps1"
 
 if ([string]::IsNullOrEmpty($PSCommandPath) -or -not (Test-Path $mainUi)) {
