@@ -5,10 +5,8 @@
 
 function Initialize-IDETab {
     param(
-        [Parameter(Mandatory)][System.Windows.Controls.Grid]$ContentArea,
         [Parameter(Mandatory)][System.Windows.Window]$Window
     )
-    $ContentArea.Children.Clear()
 
     $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path (Split-Path $PSScriptRoot) }
     foreach ($mod in @('IDEManager', 'TerminalManager', 'ProfileManager')) {
@@ -275,5 +273,18 @@ function Initialize-IDETab {
     $outer.Children.Add($sec4) | Out-Null
 
     $scroll.Content = $outer
-    $ContentArea.Children.Add($scroll) | Out-Null
+
+    $controls = @{
+        TerminalDefaultsButton = $btnWT
+        SetPS7DefaultButton    = $btnPS7Default
+        CopyNeovimConfigButton = $btnNvim
+        DeployProfileButton    = $btnProfile
+    }
+    if ($btnInstPS7) { $controls['InstallPS7Button'] = $btnInstPS7 }
+
+    return @{
+        Name     = "ide"
+        Root     = $scroll
+        Controls = $controls
+    }
 }

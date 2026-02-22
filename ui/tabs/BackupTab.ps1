@@ -5,10 +5,8 @@
 
 function Initialize-BackupTab {
     param(
-        [Parameter(Mandatory)][System.Windows.Controls.Grid]$ContentArea,
         [Parameter(Mandatory)][System.Windows.Window]$Window
     )
-    $ContentArea.Children.Clear()
 
     $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path (Split-Path $PSScriptRoot) }
     if (-not (Get-Command Invoke-BackupSnapshot -ErrorAction SilentlyContinue)) {
@@ -99,7 +97,6 @@ function Initialize-BackupTab {
     $outer.Children.Add($sec2) | Out-Null
 
     $scroll.Content = $outer
-    $ContentArea.Children.Add($scroll) | Out-Null
 
     # ── Handlers ───────────────────────────────────────────────
 
@@ -161,4 +158,15 @@ function Initialize-BackupTab {
 
     # Initial load
     Update-Snapshots
+
+    return @{
+        Name     = "backup"
+        Root     = $scroll
+        Controls = @{
+            RefreshButton = $btnRefresh
+            RestoreButton = $btnRestore
+            BackupButton  = $btnBackup
+            SnapshotList  = $lbSnaps
+        }
+    }
 }

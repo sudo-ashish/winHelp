@@ -61,7 +61,14 @@ function Invoke-TabContent {
         [Parameter(Mandatory)][System.Windows.Controls.Grid]$ContentArea
     )
 
-    # Find the module path for this tab Id
+    # 1. Tabs must load once only. Prevent duplicate initialization.
+    if ($Global:UI.Tabs.ContainsKey($TabId)) {
+        Write-Log "Switching to cached tab: $TabId" -Level DEBUG
+        $ContentArea.Children.Clear()
+        $ContentArea.Children.Add($Global:UI.Tabs[$TabId].Root) | Out-Null
+        return
+    }
+
     $tabEntry = (Get-Config "ui.tabs") | Where-Object { $_.Id -eq $TabId } | Select-Object -First 1
     if ($null -eq $tabEntry) {
         Write-Log "No tab entry found for Id '$TabId'" -Level WARN
@@ -70,9 +77,7 @@ function Invoke-TabContent {
 
     $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path $PSScriptRoot -Parent }
     $modulePath = Join-Path $appRoot $tabEntry.Module
-    $initFn = "Initialize-$((Get-Culture).TextInfo.ToTitleCase($TabId))Tab"
 
-    # Map tab Id to correct function name
     $fnMap = @{
         'packages' = 'Initialize-PackageTab'
         'git'      = 'Initialize-GitTab'
@@ -94,6 +99,33 @@ function Invoke-TabContent {
             return
         }
         . $modulePath
-        & $initFn -ContentArea $ContentArea -Window $Window
+        
+        # 2. Each tab loader must return the object
+        $tabObj = & $initFn -Window $Window
+
+        if (-not $tabObj -or -not $tabObj.Root) {
+            throw "Tab loader $initFn did not return a valid object for $TabId"
+        }
+
+        # 8. Add diagnostics: Log every registered control
+        Write-Log "Registering UI Controls for [$TabId]:" -Level DEBUG
+        
+        # 7. Validate all controls on load
+        if ($tabObj.Controls) {
+            foreach ($key in $tabObj.Controls.Keys) {
+                $ctrl = $tabObj.Controls[$key]
+                if (-not $ctrl) {
+                    throw "Missing UI control '$key' in $($tabObj.Name)"
+                }
+                Write-Log "  - $key ($($ctrl.GetType().Name))" -Level DEBUG
+            }
+        }
+
+        # 3. MainWindow/TabManager must register:
+        $Global:UI.Tabs[$TabId] = $tabObj
+
+        # Display the loaded tab
+        $ContentArea.Children.Clear()
+        $ContentArea.Children.Add($tabObj.Root) | Out-Null
     }
 }

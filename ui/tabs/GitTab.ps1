@@ -5,10 +5,8 @@
 
 function Initialize-GitTab {
     param(
-        [Parameter(Mandatory)][System.Windows.Controls.Grid]$ContentArea,
         [Parameter(Mandatory)][System.Windows.Window]$Window
     )
-    $ContentArea.Children.Clear()
 
     $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path (Split-Path $PSScriptRoot) }
     if (-not (Get-Command Set-GitConfig -ErrorAction SilentlyContinue)) {
@@ -274,5 +272,21 @@ function Initialize-GitTab {
     $outer.Children.Add($sec3) | Out-Null
 
     $scroll.Content = $outer
-    $ContentArea.Children.Add($scroll) | Out-Null
+
+    return @{
+        Name     = "git"
+        Root     = $scroll
+        Controls = @{
+            ApplyGitConfigButton = $btnApplyGit
+            GitUserTextBox       = $tbGitUser
+            GitEmailTextBox      = $tbGitEmail
+            InstallGHButton      = $btnInstallGH
+            AuthGHButton         = $btnAuth
+            ClonePathTextBox     = $tbClonePath
+            BrowsePathButton     = $btnBrowse
+            FetchReposButton     = $btnFetch
+            RepoListBox          = $lbRepos
+            CloneReposButton     = $btnClone
+        }
+    }
 }

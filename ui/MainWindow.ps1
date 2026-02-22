@@ -18,6 +18,12 @@ function Show-MainWindow {
         $reader = [System.Xml.XmlNodeReader]::new($xaml)
         $window = [System.Windows.Markup.XamlReader]::Load($reader)
 
+        # ── 2a. Setup Central UI Registry ────────────────────────
+        $Global:UI = @{
+            Window = $window
+            Tabs   = @{}
+        }
+
         # ── 3. Wire named controls ───────────────────────────────
         $closeBtn = $window.FindName('CloseBtn')
         $reloadBtn = $window.FindName('ReloadBtn')

@@ -5,10 +5,8 @@
 
 function Initialize-TweakTab {
     param(
-        [Parameter(Mandatory)][System.Windows.Controls.Grid]$ContentArea,
         [Parameter(Mandatory)][System.Windows.Window]$Window
     )
-    $ContentArea.Children.Clear()
 
     $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path (Split-Path $PSScriptRoot) }
     if (-not (Get-Command Disable-Telemetry -ErrorAction SilentlyContinue)) {
@@ -153,5 +151,10 @@ function Initialize-TweakTab {
     $outer.Children.Add($sec1) | Out-Null
 
     $scroll.Content = $outer
-    $ContentArea.Children.Add($scroll) | Out-Null
+
+    return @{
+        Name     = "tweaks"
+        Root     = $scroll
+        Controls = @{} # dynamic
+    }
 }

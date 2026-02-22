@@ -5,10 +5,8 @@
 
 function Initialize-PackageTab {
     param(
-        [Parameter(Mandatory)][System.Windows.Controls.Grid]$ContentArea,
         [Parameter(Mandatory)][System.Windows.Window]$Window
     )
-    $ContentArea.Children.Clear()
 
     # Resolve app root and load backend if needed
     $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path (Split-Path $PSScriptRoot) }
@@ -134,8 +132,7 @@ function Initialize-PackageTab {
     $rightPanel.Children.Add($script:LblSkipped)   | Out-Null
 
     [System.Windows.Controls.Grid]::SetColumn($rightPanel, 1)
-    $root.Children.Add($rightPanel) | Out-Null
-    $ContentArea.Children.Add($root) | Out-Null
+    # $ContentArea.Children.Add($root) is removed
 
     # ── Helper to reset counters ─────────────────────────────────
     function Reset-Counters {
@@ -200,4 +197,18 @@ function Initialize-PackageTab {
                 "winHelp — Done", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information
             ) | Out-Null
         })
+
+    return @{
+        Name     = "packages"
+        Root     = $root
+        Controls = @{
+            UpgradeButton   = $btnUpgrade
+            InstallButton   = $btnInstall
+            UninstallButton = $btnUninstall
+            ClearButton     = $btnClear
+            InstalledLabel  = $script:LblInstalled
+            FailedLabel     = $script:LblFailed
+            SkippedLabel    = $script:LblSkipped
+        }
+    }
 }
