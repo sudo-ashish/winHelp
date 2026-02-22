@@ -80,7 +80,7 @@ function Initialize-TweakTab {
         $sec1Inner.Children.Add($warn) | Out-Null
     }
 
-    $tweaksConfig = Get-Config "tweaks"
+    $tweaksConfig = Get-Config "tweaks.tweaks"
     if (-not $tweaksConfig) {
         Write-Log "No tweaks configuration found." -Level WARN
     }
