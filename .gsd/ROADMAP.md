@@ -73,7 +73,7 @@
 ---
 
 ### Phase 4: Git / GitHub Tab + IDE / Terminal Tab
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete (Included in Phase 3 Execution)
 **Objective**: Implement Tabs 2 and 3 — Git config form, GitHub CLI integration, repo fetcher, IDE/extension installer, Windows Terminal merge, Neovim deploy, and PowerShell profile setup.
 
 **Deliverables:**
@@ -90,8 +90,8 @@
 
 ---
 
-### Phase 4: Backup / Restore Tab + Tweaks Tab
-**Status**: ✅ Complete
+### Phase 5: Backup / Restore Tab + Tweaks Tab
+**Status**: ✅ Complete (Executed as Phase 4)
 **Objective**: Implement Tabs 4 and 5 — versioned backup/restore system and Windows privacy tweaks.
 
 **Deliverables:**
