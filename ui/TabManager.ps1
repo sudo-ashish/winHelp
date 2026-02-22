@@ -164,18 +164,18 @@ function Invoke-TabContent {
                                 [System.Windows.MessageBox]::Show("No apps selected.", "winHelp") | Out-Null; return
                             }
                             $c.PackageInstallButton.IsEnabled = $false
-                            Reset-Counters
-                            foreach ($app in $selected) {
-                                & $Global:SetStatus "Installing $($app.Name)..."
-                                $ok = Invoke-AppInstall -App $app
-                                if ($ok) { $s.CountInstalled++; $c.InstalledLabel.Text = "Installed:  $($s.CountInstalled)" }
-                                else { $s.CountFailed++; $c.FailedLabel.Text = "Failed:     $($s.CountFailed)" }
-                            }
-                            & $Global:SetStatus "Install complete."
+                            & $Global:SetStatus "Launching batch install for $($selected.Count) package(s)..."
+                            Write-Log "PackageInstallButton: starting batch install for $($selected.Count) apps." -Level INFO
+
+                            $ok = Invoke-BatchAppInstall -Apps ([hashtable[]]$selected)
+
+                            & $Global:SetStatus $(if ($ok) { "Batch install complete ✓" } else { "Batch install failed — see log" })
+                            Write-Log "PackageInstallButton: batch install returned ok=$ok." -Level INFO
                             $c.PackageInstallButton.IsEnabled = $true
                             [System.Windows.MessageBox]::Show(
-                                "Results:`n  Installed : $($s.CountInstalled)`n  Failed    : $($s.CountFailed)`n  Skipped   : $($s.CountSkipped)",
-                                "winHelp — Done", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information
+                                $(if ($ok) { "Batch install finished for $($selected.Count) package(s).`nCheck the install window output for per-package results." } else { "Batch install failed. Check logs for details." }),
+                                "winHelp — Done", [System.Windows.MessageBoxButton]::OK,
+                                $(if ($ok) { [System.Windows.MessageBoxImage]::Information } else { [System.Windows.MessageBoxImage]::Warning })
                             ) | Out-Null
                         })
 
@@ -386,6 +386,11 @@ function Invoke-TabContent {
                             & $Global:SetStatus "Fetching repos from GitHub..."
                             $c.RepoListBox.Items.Clear()
                             $repos = Get-GitHubRepos
+                            if ($null -eq $repos) {
+                                & $Global:SetStatus "Fetch aborted."
+                                $c.GitFetchReposButton.IsEnabled = $true
+                                return
+                            }
                             foreach ($r in $repos) {
                                 $item = [System.Windows.Controls.ListBoxItem]::new()
                                 $item.Content = "$($r.name)$(if($r.isPrivate){ ' 🔒' })"
@@ -523,6 +528,30 @@ function Invoke-TabContent {
                             $ok = Install-PSProfile
                             & $Global:SetStatus $(if ($ok) { "PS7 profile deployed ✓ (backup at .wh-bak)" } else { "Deploy failed — see log" })
                             $c.IDEDeployProfileButton.IsEnabled = $true
+                        })
+
+                    $ctrls.IDEInstallFontButton.Add_Click({
+                            $c = $Global:UI.Tabs['ide'].Controls
+                            $selectedItem = $c.IDEFontComboBox.SelectedItem
+                            if ($null -eq $selectedItem) {
+                                [System.Windows.MessageBox]::Show("No font selected.", "winHelp") | Out-Null
+                                return
+                            }
+                            $fontName = $selectedItem.Content
+                            $c.IDEInstallFontButton.IsEnabled = $false
+                            & $Global:SetStatus "Installing $fontName Nerd Font..."
+                            Write-Host "Installing Nerd Font: $fontName" -ForegroundColor Cyan
+                            $ok = Install-NerdFont -FontName $fontName
+                            $msg = if ($ok) { "$fontName Nerd Font installed ✓" } else { "Font install failed — see log" }
+                            & $Global:SetStatus $msg
+                            Add-Type -AssemblyName PresentationFramework
+                            [System.Windows.MessageBox]::Show(
+                                $msg,
+                                "winHelp — Fonts",
+                                [System.Windows.MessageBoxButton]::OK,
+                                $(if ($ok) { [System.Windows.MessageBoxImage]::Information } else { [System.Windows.MessageBoxImage]::Warning })
+                            ) | Out-Null
+                            $c.IDEInstallFontButton.IsEnabled = $true
                         })
                 }
 

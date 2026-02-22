@@ -136,8 +136,8 @@ function Start-GitHubAuth {
 
     # Check if already authenticated
     try {
-        $status = & gh auth status 2>&1 | Out-String
-        if ($status -match "Logged in") {
+        $null = & gh auth status 2>&1
+        if ($LASTEXITCODE -eq 0) {
             Write-Log "gh: already authenticated." -Level INFO
             return $true
         }
@@ -147,8 +147,29 @@ function Start-GitHubAuth {
     # Not authenticated — launch interactive auth in new window
     Write-Log "Launching gh auth login..." -Level INFO
     try {
-        Start-Process pwsh -ArgumentList "-NoProfile -Command `"gh auth login`"" -Wait
-        return $null  # Caller should show 'complete auth in the opened window'
+        $proc = Start-Process pwsh `
+            -ArgumentList "-NoProfile -Command `"gh auth login`"" `
+            -Wait `
+            -PassThru
+
+        if ($proc.ExitCode -ne 0) {
+            Write-Host "GitHub authentication was cancelled."
+            Write-Log "GitHub authentication was cancelled (ExitCode: $($proc.ExitCode))." -Level WARN
+            Add-Type -AssemblyName PresentationFramework
+            [System.Windows.MessageBox]::Show("Authentication not completed. Repository fetch aborted.", "Warning", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning) | Out-Null
+            return $false
+        }
+
+        $null = & gh auth status 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "GitHub authentication was cancelled."
+            Write-Log "GitHub authentication was cancelled (invalid status)." -Level WARN
+            Add-Type -AssemblyName PresentationFramework
+            [System.Windows.MessageBox]::Show("Authentication not completed. Repository fetch aborted.", "Warning", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning) | Out-Null
+            return $false
+        }
+
+        return $true
     }
     catch {
         Write-Log "Could not launch gh auth login: $_" -Level ERROR
@@ -163,46 +184,31 @@ function Get-GitHubRepos {
         [System.Windows.MessageBox]::Show("GitHub CLI (gh) is required to fetch repositories.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error) | Out-Null
         return @()
     }
-    $retry = $false
     try {
-        $json = & gh repo list --limit 100 --json "name,url,description,isPrivate" 2>&1 | Out-String
-        if ($json -match "authentication required" -or $json -match "not logged in" -or $json -match "no credentials") {
-            Write-Log "gh repo list failed: Authentication required." -Level WARN
-            $retry = $true
-        }
-        else {
-            $repos = $json | ConvertFrom-Json
-            Write-Log "Fetched $($repos.Count) repos from GitHub." -Level INFO
-            return $repos
+        $null = & gh auth status 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log "gh auth status invalid before fetch." -Level WARN
+            Add-Type -AssemblyName PresentationFramework
+            [System.Windows.MessageBox]::Show("Authentication not completed. Repository fetch aborted.", "Warning", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning) | Out-Null
+            return $null
         }
     }
     catch {
-        Write-Log "Get-GitHubRepos failed on first attempt: $_" -Level ERROR
-        $retry = $true
+        Write-Log "gh auth status check failed before fetch." -Level WARN
+        Add-Type -AssemblyName PresentationFramework
+        [System.Windows.MessageBox]::Show("Authentication not completed. Repository fetch aborted.", "Warning", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning) | Out-Null
+        return $null
     }
 
-    if ($retry) {
-        Write-Log "Prompting user for GitHub Authentication before retry." -Level INFO
-        Add-Type -AssemblyName PresentationFramework
-        [System.Windows.MessageBox]::Show(
-            "You must complete 'gh auth login' before fetching repositories.", 
-            "winHelp — Authentication Required", 
-            [System.Windows.MessageBoxButton]::OK, 
-            [System.Windows.MessageBoxImage]::Information
-        ) | Out-Null
-        Start-Process pwsh -ArgumentList "-NoProfile -Command `"gh auth login`"" -Wait
-        try {
-            Write-Log "Retrying gh repo list..." -Level INFO
-            $json = & gh repo list --limit 100 --json "name,url,description,isPrivate" 2>&1 | Out-String
-            $repos = $json | ConvertFrom-Json
-            Write-Log "Fetched $($repos.Count) repos from GitHub on retry." -Level INFO
-            return $repos
-        }
-        catch {
-            Write-Log "Get-GitHubRepos failed on retry: $_" -Level ERROR
-            [System.Windows.MessageBox]::Show("Failed to fetch repositories after authentication retry. See log for details.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error) | Out-Null
-            return @()
-        }
+    try {
+        $json = & gh repo list --limit 100 --json "name,url,description,isPrivate" 2>&1 | Out-String
+        $repos = $json | ConvertFrom-Json
+        Write-Log "Fetched $($repos.Count) repos from GitHub." -Level INFO
+        return $repos
+    }
+    catch {
+        Write-Log "Get-GitHubRepos failed: $_" -Level ERROR
+        return $null
     }
 }
 
@@ -217,10 +223,12 @@ function Invoke-RepoClone {
         Add-Type -AssemblyName PresentationFramework
         $result = [System.Windows.MessageBox]::Show("Git is not installed. Install now?", "Git Missing", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
         if ($result -eq 'Yes') {
-            Start-Process winget -ArgumentList "install Git.Git --accept-package-agreements --accept-source-agreements --silent" -Wait -NoNewWindow
+            $proc = Start-Process winget -ArgumentList "install Git.Git --accept-package-agreements --accept-source-agreements --silent" -Wait -PassThru -NoNewWindow
             Update-EnvironmentPath
         }
         if ($null -eq (Get-Command git -ErrorAction SilentlyContinue)) {
+            Add-Type -AssemblyName PresentationFramework
+            [System.Windows.MessageBox]::Show("Git installation failed. Please install it manually.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error) | Out-Null
             Write-Log "Invoke-RepoClone aborted: git still not found." -Level ERROR
             return $false
         }

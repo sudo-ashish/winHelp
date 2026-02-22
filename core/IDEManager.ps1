@@ -79,6 +79,89 @@ function Install-Extensions {
     return $results
 }
 
+function Install-NerdFont {
+    param(
+        [Parameter(Mandatory)][string]$FontName
+    )
+
+    # Validate admin — font registration requires elevation
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+        [Security.Principal.WindowsBuiltInRole]::Administrator
+    )
+    if (-not $isAdmin) {
+        Write-Log "Install-NerdFont: Not running as admin — aborting." -Level WARN
+        Write-Host "ERROR: Administrator rights required to install fonts." -ForegroundColor Red
+        Add-Type -AssemblyName PresentationFramework
+        [System.Windows.MessageBox]::Show(
+            "Installing fonts requires Administrator rights.`nPlease re-run winHelp as Administrator.",
+            "winHelp — Admin Required",
+            [System.Windows.MessageBoxButton]::OK,
+            [System.Windows.MessageBoxImage]::Warning
+        ) | Out-Null
+        return $false
+    }
+
+    $url     = "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/$FontName.zip"
+    $tmpZip  = Join-Path $env:TEMP "$FontName-NerdFont.zip"
+    $tmpDir  = Join-Path $env:TEMP "$FontName-NerdFont"
+    $fontsDir = "C:\Windows\Fonts"
+    $regPath  = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts"
+
+    Write-Log "Install-NerdFont: Starting install for '$FontName'." -Level INFO
+    Write-Host "Downloading $FontName Nerd Font..." -ForegroundColor Cyan
+
+    try {
+        # 1. Download
+        Write-Log "Downloading: $url" -Level DEBUG
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri $url -OutFile $tmpZip -UseBasicParsing
+        Write-Log "Download complete: $tmpZip" -Level DEBUG
+
+        # 2. Extract
+        if (Test-Path $tmpDir) { Remove-Item $tmpDir -Recurse -Force }
+        Write-Log "Extracting to: $tmpDir" -Level DEBUG
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($tmpZip, $tmpDir)
+        Write-Log "Extraction complete." -Level DEBUG
+
+        # 3. Copy + Register fonts
+        $fontFiles = Get-ChildItem -Path $tmpDir -Include "*.ttf","*.otf" -Recurse
+        if ($fontFiles.Count -eq 0) {
+            Write-Log "Install-NerdFont: No .ttf/.otf files found in archive." -Level WARN
+            return $false
+        }
+
+        $installed = 0
+        foreach ($font in $fontFiles) {
+            $destPath = Join-Path $fontsDir $font.Name
+            Write-Host "  Installing: $($font.Name)" -ForegroundColor DarkGray
+            Write-Log "  Copying font: $($font.Name) → $destPath" -Level DEBUG
+
+            Copy-Item $font.FullName $destPath -Force
+
+            # Register in registry
+            $regName = [System.IO.Path]::GetFileNameWithoutExtension($font.Name) + " (TrueType)"
+            Set-ItemProperty -Path $regPath -Name $regName -Value $font.Name -ErrorAction SilentlyContinue
+            Write-Log "  Registered font: $regName" -Level DEBUG
+            $installed++
+        }
+
+        Write-Log "Install-NerdFont: '$FontName' installed — $installed font files registered." -Level INFO
+        Write-Host "$FontName Nerd Font installed successfully ($installed files)." -ForegroundColor Green
+
+        # 4. Cleanup
+        Remove-Item $tmpZip  -Force -ErrorAction SilentlyContinue
+        Remove-Item $tmpDir  -Recurse -Force -ErrorAction SilentlyContinue
+
+        return $true
+    }
+    catch {
+        Write-Log "Install-NerdFont '$FontName' failed: $_" -Level ERROR
+        Write-Host "ERROR: Font install failed — $_" -ForegroundColor Red
+        return $false
+    }
+}
+
 function Copy-IDESettings {
     param(
         [Parameter(Mandatory)][PSCustomObject]$IDE

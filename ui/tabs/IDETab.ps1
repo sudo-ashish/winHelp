@@ -154,6 +154,50 @@ function Initialize-IDETab {
     $outer.Children.Add($sec3) | Out-Null
 
     # ════════════════════════════════════════════════════════════
+    # SECTION 3b — Terminal / Editor Fonts (Nerd Fonts)
+    # ════════════════════════════════════════════════════════════
+    $sec3b, $sec3bInner = New-Section
+    $sec3bInner.Children.Add((New-SectionHeader "🔤  Terminal / Editor Fonts")) | Out-Null
+
+    $fontLabel = [System.Windows.Controls.TextBlock]::new()
+    $fontLabel.Text = "Select Nerd Font"
+    $fontLabel.FontSize = 12
+    $fontLabel.Foreground = $Window.TryFindResource('TextMuted')
+    $fontLabel.Margin = [System.Windows.Thickness]::new(0, 0, 0, 4)
+    $sec3bInner.Children.Add($fontLabel) | Out-Null
+
+    $fontCombo = [System.Windows.Controls.ComboBox]::new()
+    $fontCombo.Height = 32
+    $fontCombo.FontSize = 13
+    $fontCombo.Margin = [System.Windows.Thickness]::new(0, 0, 0, 8)
+
+    # Resolve theme brushes once for use on items
+    $fg  = $Window.TryFindResource('TextPrimary')
+    $bg  = $Window.TryFindResource('InputBackground')
+    $bdr = $Window.TryFindResource('BorderColor')
+
+    $fontCombo.Background   = $bg
+    $fontCombo.Foreground   = $fg
+    $fontCombo.BorderBrush  = $bdr
+    $fontCombo.BorderThickness = [System.Windows.Thickness]::new(1)
+
+    foreach ($fontName in @('JetBrainsMono', 'CascadiaMono', 'FiraCode', 'Hack', 'SourceCodePro')) {
+        $item = [System.Windows.Controls.ComboBoxItem]::new()
+        $item.Content    = $fontName
+        $item.Foreground = $fg
+        $item.Background = $bg
+        $fontCombo.Items.Add($item) | Out-Null
+    }
+    $fontCombo.SelectedIndex = 0
+    $sec3bInner.Children.Add($fontCombo) | Out-Null
+
+
+    $btnInstFont = New-Button "Install Selected Font" -Accent $true
+    $sec3bInner.Children.Add($btnInstFont) | Out-Null
+
+    $outer.Children.Add($sec3b) | Out-Null
+
+    # ════════════════════════════════════════════════════════════
     # SECTION 4 — Neovim & PowerShell Profile
     # ════════════════════════════════════════════════════════════
     $sec4, $sec4Inner = New-Section
@@ -200,10 +244,12 @@ function Initialize-IDETab {
 
     $scroll.Content = $outer
 
-    $controls['IDEMergeDefaultsButton'] = $btnWT
-    $controls['IDESetPS7DefaultButton'] = $btnPS7Default
+    $controls['IDEMergeDefaultsButton']    = $btnWT
+    $controls['IDESetPS7DefaultButton']    = $btnPS7Default
     $controls['IDECopyNeovimConfigButton'] = $btnNvim
-    $controls['IDEDeployProfileButton'] = $btnProfile
+    $controls['IDEDeployProfileButton']    = $btnProfile
+    $controls['IDEFontComboBox']           = $fontCombo
+    $controls['IDEInstallFontButton']      = $btnInstFont
     if ($btnInstPS7) {
         $controls['IDEInstallPS7Button'] = $btnInstPS7
     }
