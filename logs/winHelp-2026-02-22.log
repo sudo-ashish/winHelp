@@ -26,3 +26,46 @@
 [2026-02-22 11:43:32] [INFO] Rollback completed: Test undo
 [2026-02-22 11:43:32] [INFO] GoodAction completed successfully.
 [2026-02-22 11:43:32] [ERROR] FailAction FAILED: intentional error
+
+============================================================
+=== winHelp Session Started: 2026-02-22 12:00:07 ===
+============================================================
+[2026-02-22 12:00:07] [DEBUG] Loaded config: backup.json
+[2026-02-22 12:00:07] [DEBUG] Loaded config: ide.json
+[2026-02-22 12:00:07] [DEBUG] Loaded config: ui.json
+[2026-02-22 12:00:07] [DEBUG] Loaded config: tweaks.json
+[2026-02-22 12:00:07] [DEBUG] Loaded config: packages.json
+[2026-02-22 12:00:07] [DEBUG] Loaded config: extensions.json
+[2026-02-22 12:00:07] [DEBUG] Theme applied: Dark
+[2026-02-22 12:00:07] [DEBUG] Theme applied: Light
+[2026-02-22 12:00:07] [DEBUG] Theme applied: Dark
+[2026-02-22 12:00:07] [DEBUG] Tab added: 📦 Packages
+[2026-02-22 12:00:07] [DEBUG] Tab added: 🔀 Git
+[2026-02-22 12:00:07] [DEBUG] Tab added: 💻 IDE
+[2026-02-22 12:00:08] [DEBUG] Tab added: 💾 Backup
+[2026-02-22 12:00:08] [DEBUG] Tab added: 🔧 Tweaks
+[2026-02-22 12:00:08] [INFO] Loading tab: packages → 
+[2026-02-22 12:00:08] [WARN] Tab module not found: 
+[2026-02-22 12:00:08] [INFO] Load-packages-Tab completed successfully.
+[2026-02-22 12:00:08] [INFO] TabManager initialized — 5 tabs.
+
+============================================================
+=== winHelp Session Started: 2026-02-22 12:01:18 ===
+============================================================
+[2026-02-22 12:01:18] [DEBUG] Loaded config: extensions.json
+[2026-02-22 12:01:18] [DEBUG] Loaded config: tweaks.json
+[2026-02-22 12:01:18] [DEBUG] Loaded config: backup.json
+[2026-02-22 12:01:18] [DEBUG] Loaded config: packages.json
+[2026-02-22 12:01:18] [DEBUG] Loaded config: ide.json
+[2026-02-22 12:01:18] [DEBUG] Loaded config: ui.json
+[2026-02-22 12:01:18] [DEBUG] Theme applied: Dark
+[2026-02-22 12:01:18] [DEBUG] Tab added: 📦 Packages
+[2026-02-22 12:01:18] [DEBUG] Tab added: 🔀 Git
+[2026-02-22 12:01:18] [DEBUG] Tab added: 💻 IDE
+[2026-02-22 12:01:18] [DEBUG] Tab added: 💾 Backup
+[2026-02-22 12:01:18] [DEBUG] Tab added: 🔧 Tweaks
+[2026-02-22 12:01:18] [INFO] Loading tab: packages → C:\Users\Pear\Documents\project\winHelp\ui\tabs\PackageTab.ps1
+[2026-02-22 12:01:18] [INFO] Load-packages-Tab completed successfully.
+[2026-02-22 12:01:18] [INFO] Loading tab: packages → C:\Users\Pear\Documents\project\winHelp\ui\tabs\PackageTab.ps1
+[2026-02-22 12:01:18] [INFO] Load-packages-Tab completed successfully.
+[2026-02-22 12:01:19] [INFO] TabManager initialized — 5 tabs.
