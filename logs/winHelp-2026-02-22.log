@@ -69,3 +69,15 @@
 [2026-02-22 12:01:18] [INFO] Loading tab: packages → C:\Users\Pear\Documents\project\winHelp\ui\tabs\PackageTab.ps1
 [2026-02-22 12:01:18] [INFO] Load-packages-Tab completed successfully.
 [2026-02-22 12:01:19] [INFO] TabManager initialized — 5 tabs.
+
+============================================================
+=== winHelp Session Started: 2026-02-22 12:28:36 ===
+============================================================
+[2026-02-22 12:28:36] [DEBUG] Loaded config: packages.json
+[2026-02-22 12:28:36] [DEBUG] Loaded config: ui.json
+[2026-02-22 12:28:36] [DEBUG] Loaded config: ide.json
+[2026-02-22 12:28:36] [DEBUG] Loaded config: backup.json
+[2026-02-22 12:28:36] [DEBUG] Loaded config: extensions.json
+[2026-02-22 12:28:36] [DEBUG] Loaded config: tweaks.json
+[2026-02-22 12:28:36] [DEBUG] Theme applied: Dark
+[2026-02-22 12:28:36] [DEBUG] winget available: True (v1.12.460)
