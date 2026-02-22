@@ -1,7 +1,5 @@
 # ============================================================
 # winHelp — .gitignore
-# Conservative: only ignores generated/local/AI/editor files
-# Runtime assets (core/, ui/, config/, assets/) are NOT ignored
 # ============================================================
 
 # ── Logs / Temp / Cache ──────────────────────────────────────
@@ -14,27 +12,25 @@ cache/
 *.cache
 *.dmp
 
-# ── Backup & Snapshot output ─────────────────────────────────
+# ── Build / Snapshot / Backup output ─────────────────────────
+build/
+dist/
+bin/
+obj/
 backups/
 snapshots/
-build/
 
 # ── IDE / Editor ─────────────────────────────────────────────
 .vs/
 .vscode/
 .idea/
 
-# ── Build / Output ───────────────────────────────────────────
-bin/
-obj/
-dist/
-
-# ── AI / Agent / GSD / Gemini ───────────────────────────────
+# ── AI / Agent / GSD / Gemini dirs ──────────────────────────
 .gsd/
 .gemini/
 .ag/
-.agents/
 .agent/
+.agents/
 .ai/
 .llm/
 prompts/
@@ -42,16 +38,23 @@ sessions/
 adapters/
 model_capabilities.yaml
 
-# ── OS generated ─────────────────────────────────────────────
+# ── Reference / backups (not runtime) ───────────────────────
+eg-bak/
+asset-bak/
+
+# ── OS / System ──────────────────────────────────────────────
 Thumbs.db
 Desktop.ini
 .DS_Store
 
-# ── User-specific overrides ──────────────────────────────────
+# ── User-specific / local ────────────────────────────────────
 user.config
 local.settings.json
 *.local.json
 
-# ── Reference / example backups (not runtime) ────────────────
-eg-bak/
-asset-bak/
+# ── Dev scratch files ────────────────────────────────────────
+test.ps1
+test-func.ps1
+core.ps1
+GSD-STYLE.md
+PROJECT_RULES.md
