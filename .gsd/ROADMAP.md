@@ -43,7 +43,7 @@
 ---
 
 ### Phase 2: GUI Shell
-**Status**: ⬜ Not Started
+**Status**: ✅ Complete
 **Objective**: Build the WPF/XAML window shell — custom title bar, tab system, dark/light theme engine, and reload mechanism. No backend logic yet; stubs only.
 
 **Deliverables:**
