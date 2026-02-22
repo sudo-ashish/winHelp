@@ -8,3 +8,21 @@
 [2026-02-22 11:40:17] [DEBUG] Loaded config: backup.json
 [2026-02-22 11:40:17] [DEBUG] Loaded config: packages.json
 [2026-02-22 11:40:17] [DEBUG] Loaded config: extensions.json
+
+============================================================
+=== winHelp Session Started: 2026-02-22 11:43:31 ===
+============================================================
+[2026-02-22 11:43:31] [DEBUG] Loaded config: packages.json
+[2026-02-22 11:43:31] [DEBUG] Loaded config: extensions.json
+[2026-02-22 11:43:31] [DEBUG] Loaded config: backup.json
+[2026-02-22 11:43:31] [DEBUG] Loaded config: ui.json
+[2026-02-22 11:43:31] [DEBUG] Loaded config: ide.json
+[2026-02-22 11:43:31] [DEBUG] Loaded config: tweaks.json
+[2026-02-22 11:43:31] [INFO] Integration test INFO
+[2026-02-22 11:43:31] [WARN] Integration test WARN
+[2026-02-22 11:43:31] [ERROR] Integration test ERROR
+[2026-02-22 11:43:31] [DEBUG] Rollback registered: Test undo
+[2026-02-22 11:43:31] [INFO] Rolling back: Test undo
+[2026-02-22 11:43:32] [INFO] Rollback completed: Test undo
+[2026-02-22 11:43:32] [INFO] GoodAction completed successfully.
+[2026-02-22 11:43:32] [ERROR] FailAction FAILED: intentional error
