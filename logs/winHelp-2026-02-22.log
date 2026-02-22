@@ -1,0 +1,10 @@
+
+============================================================
+=== winHelp Session Started: 2026-02-22 11:40:17 ===
+============================================================
+[2026-02-22 11:40:17] [DEBUG] Loaded config: tweaks.json
+[2026-02-22 11:40:17] [DEBUG] Loaded config: ui.json
+[2026-02-22 11:40:17] [DEBUG] Loaded config: ide.json
+[2026-02-22 11:40:17] [DEBUG] Loaded config: backup.json
+[2026-02-22 11:40:17] [DEBUG] Loaded config: packages.json
+[2026-02-22 11:40:17] [DEBUG] Loaded config: extensions.json

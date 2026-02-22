@@ -1,0 +1,21 @@
+{
+    "mappings": {
+        "VSCodium": [
+            "beardedbear.beardedtheme",
+            "formulahendry.code-runner",
+            "ms-toolsai.jupyter",
+            "ms-vscode.live-server",
+            "pkief.material-icon-theme",
+            "ms-python.python",
+            "pkief.material-product-icons"
+        ],
+        "Antigravity": [
+            "beardedbear.beardedtheme",
+            "ms-toolsai.jupyter",
+            "ms-vscode.live-server",
+            "pkief.material-icon-theme",
+            "pkief.material-product-icons",
+            "ms-python.python"
+        ]
+    }
+}

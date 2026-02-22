@@ -1,0 +1,22 @@
+{
+    "ides": [
+        {
+            "Name": "VSCodium",
+            "Id": "VSCodium.VSCodium",
+            "Source": "winget",
+            "CliCommand": "codium",
+            "ExtensionCommand": "codium --install-extension",
+            "SettingsSource": "assets/codium/settings.json",
+            "SettingsTarget": "%APPDATA%\\VSCodium\\User\\settings.json"
+        },
+        {
+            "Name": "Antigravity",
+            "Id": "Google.Antigravity",
+            "Source": "winget",
+            "CliCommand": "antigravity",
+            "ExtensionCommand": "antigravity --install-extension",
+            "SettingsSource": "assets/antigravity/settings.json",
+            "SettingsTarget": "%APPDATA%\\Antigravity\\User\\settings.json"
+        }
+    ]
+}

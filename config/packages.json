@@ -1,0 +1,68 @@
+{
+  "categories": [
+    {
+      "name": "Browsers",
+      "apps": [
+        { "Name": "Brave", "Id": "Brave.Brave", "Source": "winget" },
+        { "Name": "Zen Browser", "Id": "Zen-Team.Zen-Browser", "Source": "winget" },
+        { "Name": "Google Chrome", "Id": "Google.Chrome", "Source": "winget" },
+        { "Name": "Chromium", "Id": "Hibbiki.Chromium", "Source": "winget" }
+      ]
+    },
+    {
+      "name": "Development",
+      "apps": [
+        { "Name": "Git", "Id": "Git.Git", "Source": "winget" },
+        { "Name": "Node.js", "Id": "OpenJS.NodeJS", "Source": "winget" },
+        { "Name": "Python 3.13", "Id": "Python.Python.3.13", "Source": "winget" },
+        { "Name": "PowerShell", "Id": "Microsoft.PowerShell", "Source": "winget" }
+      ]
+    },
+    {
+      "name": "Editors & IDEs",
+      "apps": [
+        { "Name": "VSCodium", "Id": "VSCodium.VSCodium", "Source": "winget" },
+        { "Name": "VSCode", "Id": "Microsoft.VisualStudioCode", "Source": "winget" },
+        { "Name": "Antigravity", "Id": "Google.Antigravity", "Source": "winget" },
+        { "Name": "Cursor", "Id": "Anysphere.Cursor", "Source": "winget" },
+        { "Name": "Neovim", "Id": "Neovim.Neovim", "Source": "winget" },
+        { "Name": "Vim", "Id": "vim.vim", "Source": "winget" }
+      ]
+    },
+    {
+      "name": "Productivity",
+      "apps": [
+        { "Name": "Obsidian", "Id": "Obsidian.Obsidian", "Source": "winget" },
+        { "Name": "PowerToys", "Id": "Microsoft.PowerToys", "Source": "winget" },
+        { "Name": "AutoHotKey", "Id": "AutoHotkey.AutoHotkey", "Source": "winget" },
+        { "Name": "SharpKeys", "Id": "RandyRants.SharpKeys", "Source": "winget" },
+        { "Name": "Yazi", "Id": "sxyazi.yazi", "Source": "winget" },
+        { "Name": "Fastfetch", "Id": "Fastfetch-cli.Fastfetch", "Source": "winget" },
+        { "Name": "Wintoys", "Id": "9P8LTPGCBZXD", "Source": "msstore" }
+      ]
+    },
+    {
+      "name": "Communication",
+      "apps": [
+        { "Name": "Discord", "Id": "Discord.Discord", "Source": "winget" },
+        { "Name": "Telegram", "Id": "Telegram.TelegramDesktop", "Source": "winget" },
+        { "Name": "Whatsapp", "Id": "9NKSQGP7F2NH", "Source": "winget" },
+        { "Name": "Unigram", "Id": "9N97ZCKPD60Q", "Source": "winget" }
+      ]
+    },
+    {
+      "name": "Entertainment",
+      "apps": [
+        { "Name": "Spotify", "Id": "Spotify.Spotify", "Source": "winget" },
+        { "Name": "Steam", "Id": "Valve.Steam", "Source": "winget" }
+      ]
+    },
+    {
+      "name": "Utilities",
+      "apps": [
+        { "Name": "LocalSend", "Id": "LocalSend.LocalSend", "Source": "winget" },
+        { "Name": "Helium", "Id": "ImputNet.Helium", "Source": "winget" }
+      ]
+    }
+  ]
+}

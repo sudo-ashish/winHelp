@@ -1,0 +1,64 @@
+{
+    "tweaks": [
+        {
+            "Id": "disable-telemetry",
+            "Label": "Disable Telemetry",
+            "Description": "Stops and disables Windows diagnostic data services",
+            "RequiresAdmin": true,
+            "Reversible": true,
+            "Services": [
+                "DiagTrack",
+                "dmwappushservice",
+                "wercplsupport",
+                "wermgr"
+            ]
+        },
+        {
+            "Id": "remove-bloatware",
+            "Label": "Remove Bloatware",
+            "Description": "Removes pre-installed Microsoft AppX packages",
+            "RequiresAdmin": true,
+            "Reversible": false,
+            "Packages": [
+                "Microsoft.OutlookForWindows",
+                "Microsoft.WindowsFeedbackHub",
+                "Microsoft.YourPhone",
+                "Microsoft.Getstarted",
+                "Microsoft.BingNews",
+                "MicrosoftCorporationII.QuickAssist",
+                "MicrosoftCorporationII.MicrosoftFamily",
+                "MSTeams",
+                "MicrosoftWindows.CrossDevice",
+                "Microsoft.ZuneMusic",
+                "Microsoft.WindowsSoundRecorder",
+                "Microsoft.WindowsCamera",
+                "Microsoft.WindowsAlarms",
+                "Microsoft.Windows.DevHome",
+                "Microsoft.PowerAutomateDesktop",
+                "Microsoft.Paint",
+                "Microsoft.MicrosoftStickyNotes",
+                "Microsoft.MicrosoftSolitaireCollection",
+                "Microsoft.BingWeather",
+                "Microsoft.Todos",
+                "Microsoft.BingSearch",
+                "Clipchamp.Clipchamp"
+            ]
+        },
+        {
+            "Id": "disable-bing-search",
+            "Label": "Disable Bing Search",
+            "Description": "Removes Bing results from Start Menu search",
+            "RequiresAdmin": false,
+            "Reversible": true,
+            "Registry": [
+                {
+                    "Path": "HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer",
+                    "Name": "DisableSearchBoxSuggestions",
+                    "Value": 1,
+                    "Type": "DWord",
+                    "OriginalValue": 0
+                }
+            ]
+        }
+    ]
+}

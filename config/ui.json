@@ -1,0 +1,35 @@
+{
+    "window": {
+        "title": "winHelp",
+        "width": 920,
+        "height": 640,
+        "defaultTheme": "Dark"
+    },
+    "tabs": [
+        {
+            "Id": "packages",
+            "Label": "📦 Packages",
+            "Module": "ui/tabs/PackageTab.ps1"
+        },
+        {
+            "Id": "git",
+            "Label": "🔀 Git",
+            "Module": "ui/tabs/GitTab.ps1"
+        },
+        {
+            "Id": "ide",
+            "Label": "💻 IDE",
+            "Module": "ui/tabs/IDETab.ps1"
+        },
+        {
+            "Id": "backup",
+            "Label": "💾 Backup",
+            "Module": "ui/tabs/BackupTab.ps1"
+        },
+        {
+            "Id": "tweaks",
+            "Label": "🔧 Tweaks",
+            "Module": "ui/tabs/TweakTab.ps1"
+        }
+    ]
+}
