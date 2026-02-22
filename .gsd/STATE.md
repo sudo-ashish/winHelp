@@ -3,9 +3,9 @@
 > Last Updated: 2026-02-22
 
 ## Current Position
-- **Phase**: 3 — Feature Tabs (Packages, Git, IDE) (✅ COMPLETE)
-- **Status**: Phase 3 verified PASS — ready for Phase 4
-- **Next**: `/plan 4` → Phase 4: Backup & Restore Tab
+- **Phase**: 4 — Backup & Restore + Tweaks Tabs
+- **Status**: Planning complete — ready for execution
+- **Plans**: 1 plan — wave 1: Plan 4.1
 
 ## Last Session Summary
 
