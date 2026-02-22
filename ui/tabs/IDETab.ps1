@@ -100,7 +100,7 @@ function Initialize-IDETab {
                 $ok = Install-IDE -IDE $ideRef
                 & $Global:SetStatus (if ($ok) { "$($ideRef.Name) installed ✓" } else { "Install failed — see log" })
                 $btnRef.IsEnabled = $true
-            })
+            }.GetNewClosure())
     }
     $outer.Children.Add($sec1) | Out-Null
 
@@ -151,7 +151,7 @@ function Initialize-IDETab {
                 $res = Install-Extensions -IDE $ideRef -Extensions $selected
                 & $Global:SetStatus "Extensions done: $($res.Installed.Count) installed, $($res.Failed.Count) failed."
                 $btnExtRef.IsEnabled = $true
-            })
+            }.GetNewClosure())
 
         if ($ide -ne $ides[-1]) { $sec2Inner.Children.Add((New-Separator)) | Out-Null }
     }
@@ -173,7 +173,7 @@ function Initialize-IDETab {
                 $ok = Copy-IDESettings -IDE $ideRef
                 & $Global:SetStatus (if ($ok) { "$($ideRef.Name) settings deployed ✓" } else { "Deploy failed — see log" })
                 $btnRef.IsEnabled = $true
-            })
+            }.GetNewClosure())
     }
 
     $sec3Inner.Children.Add((New-Separator)) | Out-Null

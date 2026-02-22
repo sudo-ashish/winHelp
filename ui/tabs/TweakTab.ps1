@@ -140,7 +140,7 @@ function Initialize-TweakTab {
 
                     & $Global:SetStatus (if ($ok) { "Tweak applied ✓" } else { "Failed — see log" })
                     $btnRef.IsEnabled = $true
-                })
+                }.GetNewClosure())
 
             $sec1Inner.Children.Add($row) | Out-Null
         }
