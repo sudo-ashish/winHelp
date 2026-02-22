@@ -207,18 +207,31 @@ function Invoke-TabContent {
                     function global:Update-Snapshots {
                         $c = $Global:UI.Tabs['backup'].Controls
                         $c.SnapshotList.Items.Clear()
+                        $c.DefaultSnapshotList.Items.Clear()
+
                         $snaps = Get-BackupSnapshots
+                        $bundledPath = Join-Path $Global:AppRoot "snapshots\default-restorepoint"
                         foreach ($snap in $snaps) {
                             $item = [System.Windows.Controls.ListBoxItem]::new()
-                            $item.Content = "$($snap.Name) ($($snap.Date.ToString('g')))"
                             $item.Tag = $snap.Path
-                            $c.SnapshotList.Items.Add($item) | Out-Null
+
+                            if ($snap.Path -eq $bundledPath) {
+                                $item.Content = "⭐ default-restorepoint"
+                                $c.DefaultSnapshotList.Items.Add($item) | Out-Null
+                            }
+                            else {
+                                $item.Content = "$($snap.Name) ($($snap.Date.ToString('g')))"
+                                $c.SnapshotList.Items.Add($item) | Out-Null
+                            }
                         }
+
+                        if ($c.DefaultSnapshotList.Items.Count -gt 0) { $c.DefaultSnapshotList.SelectedIndex = 0 }
                         if ($c.SnapshotList.Items.Count -gt 0) { $c.SnapshotList.SelectedIndex = 0 }
                     }
 
                     $ctrls.BackupRefreshButton.Add_Click({ Update-Snapshots })
 
+                    # ── Create user snapshot ──────────────────────────────
                     $ctrls.BackupCreateButton.Add_Click({
                             $c = $Global:UI.Tabs['backup'].Controls
                             $c.BackupCreateButton.IsEnabled = $false
@@ -236,31 +249,81 @@ function Invoke-TabContent {
                             $c.BackupCreateButton.IsEnabled = $true
                         })
 
+                    # ── Update bundled default snapshot ───────────────────
+                    $ctrls.BackupUpdateDefaultButton.Add_Click({
+                            $c = $Global:UI.Tabs['backup'].Controls
+                            $confirm = [System.Windows.MessageBox]::Show(
+                                "This will overwrite the bundled default snapshot in snapshots/default-restorepoint/ with your current registry state.`n`nContinue?",
+                                "winHelp — Update Default Snapshot",
+                                [System.Windows.MessageBoxButton]::OKCancel,
+                                [System.Windows.MessageBoxImage]::Warning
+                            )
+                            if ($confirm -ne 'OK') { return }
+
+                            $c.BackupUpdateDefaultButton.IsEnabled = $false
+                            & $Global:SetStatus "Updating bundled default snapshot..."
+                            $appRoot = $Global:AppRoot
+                            $snapDir = Join-Path $appRoot "snapshots\default-restorepoint"
+                            if (-not (Test-Path $snapDir)) { New-Item -ItemType Directory -Path $snapDir -Force | Out-Null }
+
+                            $ok = $true
+                            $items = Get-Config "backup.items"
+                            foreach ($item in $items) {
+                                if ($item.Type -eq 'registry') {
+                                    $out = Join-Path $snapDir "$($item.Id).reg"
+                                    & reg export $item.Key $out /y 2>&1 | Out-Null
+                                    if ($LASTEXITCODE -ne 0) { $ok = $false; Write-Log "reg export failed for $($item.Id)" -Level WARN }
+                                }
+                            }
+
+                            & $Global:SetStatus $(if ($ok) { "Default snapshot updated ✓" } else { "Default snapshot update had warnings — see log" })
+                            [System.Windows.MessageBox]::Show(
+                                $(if ($ok) { "Default snapshot updated successfully!`nCommit the snapshots/ folder to GitHub." } else { "Default snapshot updated with some warnings. Check logs." }),
+                                "winHelp — Default Snapshot",
+                                [System.Windows.MessageBoxButton]::OK,
+                                $(if ($ok) { [System.Windows.MessageBoxImage]::Information } else { [System.Windows.MessageBoxImage]::Warning })
+                            ) | Out-Null
+
+                            $c.BackupUpdateDefaultButton.IsEnabled = $true
+                            Update-Snapshots
+                        })
+
+                    # ── Restore selected user snapshot ────────────────────
                     $ctrls.BackupRestoreButton.Add_Click({
                             $c = $Global:UI.Tabs['backup'].Controls
                             $selected = $c.SnapshotList.SelectedItem
                             if ($null -eq $selected) {
-                                [System.Windows.MessageBox]::Show("Please select a snapshot to restore.", "winHelp", [System.Windows.MessageBoxButton]::OK) | Out-Null
+                                [System.Windows.MessageBox]::Show("Please select a user restore point from the list.", "winHelp", [System.Windows.MessageBoxButton]::OK) | Out-Null
                                 return
                             }
-
                             $snapName = $selected.Content -replace ' \(.*\)$', ''
-                            $result = [System.Windows.MessageBox]::Show("Are you sure you want to restore snapshot:`n`n$snapName`n`nWarning: Current configurations will be overwritten.", "Confirm Restore", [System.Windows.MessageBoxButton]::OKCancel, [System.Windows.MessageBoxImage]::Warning)
+                            $result = [System.Windows.MessageBox]::Show("Restore snapshot:`n`n$snapName`n`nWarning: Current configurations will be overwritten.", "Confirm Restore", [System.Windows.MessageBoxButton]::OKCancel, [System.Windows.MessageBoxImage]::Warning)
                             if ($result -ne 'OK') { return }
-
                             $c.BackupRestoreButton.IsEnabled = $false
-                            & $Global:SetStatus "Restoring from snapshot: $snapName..."
-                
+                            & $Global:SetStatus "Restoring from: $snapName..."
                             $ok = Invoke-RestoreSnapshot -SnapshotPath $selected.Tag
-                            if ($ok) {
-                                & $Global:SetStatus "Restore completed successfully."
-                                [System.Windows.MessageBox]::Show("Restore completed section by section. Check logs for detail.", "winHelp — Restore", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information) | Out-Null
-                            }
-                            else {
-                                & $Global:SetStatus "Restore failed — see log"
-                                [System.Windows.MessageBox]::Show("Restore hit an error. Check logs for detail.", "winHelp — Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error) | Out-Null
-                            }
+                            & $Global:SetStatus $(if ($ok) { "Restore completed ✓" } else { "Restore failed — see log" })
+                            [System.Windows.MessageBox]::Show($(if ($ok) { "Restore completed." } else { "Restore hit an error. Check logs." }), "winHelp — Restore", [System.Windows.MessageBoxButton]::OK, $(if ($ok) { [System.Windows.MessageBoxImage]::Information } else { [System.Windows.MessageBoxImage]::Error })) | Out-Null
                             $c.BackupRestoreButton.IsEnabled = $true
+                        })
+
+                    # ── Restore bundled default snapshot ──────────────────
+                    $ctrls.BackupRestoreDefaultButton.Add_Click({
+                            $c = $Global:UI.Tabs['backup'].Controls
+                            $appRoot = $Global:AppRoot
+                            $defaultSnap = Join-Path $appRoot "snapshots\default-restorepoint"
+                            if (-not (Test-Path $defaultSnap)) {
+                                [System.Windows.MessageBox]::Show("Bundled default snapshot not found at:`n$defaultSnap", "winHelp", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error) | Out-Null
+                                return
+                            }
+                            $result = [System.Windows.MessageBox]::Show("Restore bundled default snapshot?`n`nThis will apply the author's opinionated registry settings.`nWarning: Current settings will be overwritten.", "Confirm Restore Default", [System.Windows.MessageBoxButton]::OKCancel, [System.Windows.MessageBoxImage]::Warning)
+                            if ($result -ne 'OK') { return }
+                            $c.BackupRestoreDefaultButton.IsEnabled = $false
+                            & $Global:SetStatus "Restoring default snapshot..."
+                            $ok = Invoke-RestoreSnapshot -SnapshotPath $defaultSnap
+                            & $Global:SetStatus $(if ($ok) { "Default restore completed ✓" } else { "Default restore failed — see log" })
+                            [System.Windows.MessageBox]::Show($(if ($ok) { "Default snapshot restored successfully!" } else { "Restore hit an error. Check logs." }), "winHelp — Default Restore", [System.Windows.MessageBoxButton]::OK, $(if ($ok) { [System.Windows.MessageBoxImage]::Information } else { [System.Windows.MessageBoxImage]::Error })) | Out-Null
+                            $c.BackupRestoreDefaultButton.IsEnabled = $true
                         })
 
                     Update-Snapshots
