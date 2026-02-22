@@ -1,4 +1,3 @@
-#Requires -Version 7
 # ==============================================================================
 # winHelp — Managed PowerShell Profile
 # Managed: deployed by winHelp IDE tab. Targets PS7+ profile only.
@@ -177,7 +176,7 @@ function dtop {
     Set-Location -Path $path
 }
 
-function cpp { $pwd.Path | Set-Clipboard }
+function cpy { $pwd.Path | Set-Clipboard }
 
 # Open in editor / Explorer
 function c { code . }       # VSCode / whatever $EDITOR resolves to via PATH
@@ -262,7 +261,7 @@ ${g}docs / dtop${rs}     - Jump to Documents / Desktop
 ${g}c${rs}               - Open in VSCode
 ${g}cu${rs}              - Open in VSCodium
 ${g}o${rs}               - Open in Explorer
-${g}cpp${rs}             - Copy current path
+${g}cpy${rs}             - Copy current path
 ${g}ff <name>${rs}       - Find files recursively
 ${g}touch <file>${rs}    - Create empty file
 ${g}unzip <file>${rs}    - Extract zip here

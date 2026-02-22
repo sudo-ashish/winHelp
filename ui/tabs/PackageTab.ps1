@@ -127,107 +127,26 @@ function Initialize-PackageTab {
     $rightPanel.Children.Add($lblSkipped)   | Out-Null
 
     [System.Windows.Controls.Grid]::SetColumn($rightPanel, 1)
-    # $ContentArea.Children.Add($root) is removed
+    $root.Children.Add($rightPanel) | Out-Null
 
-    # ── Return UI Object with Event Binder ───────────────────────
-    return @{
-        Name       = "packages"
-        Root       = $root
-        Controls   = @{
-            UpgradeButton   = $btnUpgrade
-            InstallButton   = $btnInstall
-            UninstallButton = $btnUninstall
-            ClearButton     = $btnClear
-            InstalledLabel  = $lblInstalled
-            FailedLabel     = $lblFailed
-            SkippedLabel    = $lblSkipped
-        }
-        State      = @{
-            AppCheckboxes  = $appCheckboxes
-            CountInstalled = 0
-            CountFailed    = 0
-            CountSkipped   = 0
-        }
-        BindEvents = {
-            $ctrls = $Global:UI.Tabs.packages.Controls
-            $state = $Global:UI.Tabs.packages.State
-
-            function Reset-Counters {
-                $state.CountInstalled = 0; $state.CountFailed = 0; $state.CountSkipped = 0
-                $ctrls.InstalledLabel.Text = "Installed:  0"
-                $ctrls.FailedLabel.Text = "Failed:     0"
-                $ctrls.SkippedLabel.Text = "Skipped:    0"
-            }
-
-            $ctrls.ClearButton.Add_Click({
-                    foreach ($cb in $state.AppCheckboxes) { $cb.IsChecked = $false }
-                })
-
-            $ctrls.UpgradeButton.Add_Click({
-                    $ctrls.UpgradeButton.IsEnabled = $false
-                    & $Global:SetStatus "Upgrading all packages via winget..."
-                    $ok = Invoke-WingetUpgrade
-                    & $Global:SetStatus (if ($ok) { "Upgrade complete ✓" } else { "Upgrade failed — see log" })
-                    $ctrls.UpgradeButton.IsEnabled = $true
-                })
-
-            $ctrls.InstallButton.Add_Click({
-                    $selected = $state.AppCheckboxes | Where-Object { $_.IsChecked } | ForEach-Object { $_.Tag }
-                    if ($selected.Count -eq 0) {
-                        [System.Windows.MessageBox]::Show("No apps selected.", "winHelp") | Out-Null; return
-                    }
-                    $ctrls.InstallButton.IsEnabled = $false
-                    Reset-Counters
-                    foreach ($app in $selected) {
-                        & $Global:SetStatus "Installing $($app.Name)..."
-                        $ok = Invoke-AppInstall -App $app
-                        if ($ok) { $state.CountInstalled++; $ctrls.InstalledLabel.Text = "Installed:  $($state.CountInstalled)" }
-                        else { $state.CountFailed++; $ctrls.FailedLabel.Text = "Failed:     $($state.CountFailed)" }
-                    }
-                    & $Global:SetStatus "Install complete."
-                    $ctrls.InstallButton.IsEnabled = $true
-                    [System.Windows.MessageBox]::Show(
-                        "Results:`n  Installed : $($state.CountInstalled)`n  Failed    : $($state.CountFailed)`n  Skipped   : $($state.CountSkipped)",
-                        "winHelp — Done", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information
-                    ) | Out-Null
-                })
-
-            $ctrls.UninstallButton.Add_Click({
-                    $selected = $state.AppCheckboxes | Where-Object { $_.IsChecked } | ForEach-Object { $_.Tag }
-                    if ($selected.Count -eq 0) {
-                        [System.Windows.MessageBox]::Show("No apps selected.", "winHelp") | Out-Null; return
-                    }
-                    $ctrls.UninstallButton.IsEnabled = $false
-                    Reset-Counters
-                    foreach ($app in $selected) {
-                        & $Global:SetStatus "Uninstalling $($app.Name)..."
-                        $ok = Invoke-AppUninstall -App $app
-                        if ($ok) { $state.CountInstalled++; $ctrls.InstalledLabel.Text = "Uninstalled: $($state.CountInstalled)" }
-                        else { $state.CountFailed++; $ctrls.FailedLabel.Text = "Failed:      $($state.CountFailed)" }
-                    }
-                    & $Global:SetStatus "Uninstall complete."
-                    $ctrls.UninstallButton.IsEnabled = $true
-                    [System.Windows.MessageBox]::Show(
-                        "Results:`n  Uninstalled : $($state.CountInstalled)`n  Failed      : $($state.CountFailed)",
-                        "winHelp — Done", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information
-                    ) | Out-Null
-                })
-        }
-    }
-
-
-
+    # ── Return UI Object ──────────────────────────────────────────────
     return @{
         Name     = "packages"
         Root     = $root
         Controls = @{
-            UpgradeButton   = $btnUpgrade
-            InstallButton   = $btnInstall
-            UninstallButton = $btnUninstall
-            ClearButton     = $btnClear
-            InstalledLabel  = $script:LblInstalled
-            FailedLabel     = $script:LblFailed
-            SkippedLabel    = $script:LblSkipped
+            PackageUpgradeButton   = $btnUpgrade
+            PackageInstallButton   = $btnInstall
+            PackageUninstallButton = $btnUninstall
+            PackageClearButton     = $btnClear
+            InstalledLabel         = $lblInstalled
+            FailedLabel            = $lblFailed
+            SkippedLabel           = $lblSkipped
+        }
+        State    = @{
+            AppCheckboxes  = $appCheckboxes
+            CountInstalled = 0
+            CountFailed    = 0
+            CountSkipped   = 0
         }
     }
 }

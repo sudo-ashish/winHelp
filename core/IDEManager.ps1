@@ -22,7 +22,7 @@ function Install-IDE {
         $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
         [Environment]::GetEnvironmentVariable("Path", "User")
         $ok = $proc.ExitCode -eq 0
-        Write-Log "Install $($IDE.Name): exit $($proc.ExitCode)" -Level (if ($ok) { 'INFO' } else { 'WARN' })
+        Write-Log "Install $($IDE.Name): exit $($proc.ExitCode)" -Level $(if ($ok) { 'INFO' } else { 'WARN' })
         return $ok
     }
     catch {
@@ -37,8 +37,24 @@ function Install-Extensions {
         [Parameter(Mandatory)][string[]]$Extensions
     )
     $results = @{ Installed = @(); Failed = @() }
-    if (-not (Get-Command $IDE.CliCommand -ErrorAction SilentlyContinue)) {
-        Write-Log "Install-Extensions: $($IDE.CliCommand) not in PATH — is $($IDE.Name) installed?" -Level WARN
+    
+    if ($null -eq (Get-Command $IDE.CliCommand -ErrorAction SilentlyContinue)) {
+        Write-Log "Install-Extensions: $($IDE.CliCommand) not found. Prompting user..." -Level WARN
+        Add-Type -AssemblyName PresentationFramework
+        $msg = "The IDE '$($IDE.Name)' is not installed. Would you like to install it now before proceeding with extensions?"
+        $res = [System.Windows.MessageBox]::Show($msg, "winHelp — IDE Missing", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+        
+        if ($res -eq 'Yes') {
+            Write-Log "User opted to install $($IDE.Name) first." -Level INFO
+            if (Install-IDE -IDE $IDE) {
+                # Success! Refresh path already happens inside Install-IDE, but let's be sure.
+                $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+            }
+        }
+    }
+
+    if ($null -eq (Get-Command $IDE.CliCommand -ErrorAction SilentlyContinue)) {
+        Write-Log "Install-Extensions: $($IDE.CliCommand) still not in PATH. Aborting." -Level ERROR
         return $results
     }
     foreach ($ext in $Extensions) {

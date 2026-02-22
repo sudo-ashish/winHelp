@@ -1,0 +1,57 @@
+# ============================================================
+# winHelp — .gitignore
+# Conservative: only ignores generated/local/AI/editor files
+# Runtime assets (core/, ui/, config/, assets/) are NOT ignored
+# ============================================================
+
+# ── Logs / Temp / Cache ──────────────────────────────────────
+logs/
+temp/
+cache/
+*.log
+*.tmp
+*.bak
+*.cache
+*.dmp
+
+# ── Backup & Snapshot output ─────────────────────────────────
+backups/
+snapshots/
+build/
+
+# ── IDE / Editor ─────────────────────────────────────────────
+.vs/
+.vscode/
+.idea/
+
+# ── Build / Output ───────────────────────────────────────────
+bin/
+obj/
+dist/
+
+# ── AI / Agent / GSD / Gemini ───────────────────────────────
+.gsd/
+.gemini/
+.ag/
+.agents/
+.agent/
+.ai/
+.llm/
+prompts/
+sessions/
+adapters/
+model_capabilities.yaml
+
+# ── OS generated ─────────────────────────────────────────────
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ── User-specific overrides ──────────────────────────────────
+user.config
+local.settings.json
+*.local.json
+
+# ── Reference / example backups (not runtime) ────────────────
+eg-bak/
+asset-bak/

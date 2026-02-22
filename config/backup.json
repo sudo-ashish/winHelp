@@ -11,7 +11,7 @@
             "Id": "explorer",
             "Label": "Explorer Settings",
             "Type": "registry",
-            "Key": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer",
+            "Key": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
             "File": "explorer.reg"
         },
         {
@@ -34,12 +34,6 @@
             "Type": "registry",
             "Key": "HKCU\\Control Panel\\Mouse",
             "File": "mouse.reg"
-        },
-        {
-            "Id": "psprofile",
-            "Label": "PowerShell Profile",
-            "Type": "file",
-            "File": "powershell-profile.ps1"
         }
     ],
     "snapshotDir": "build/snapshots"

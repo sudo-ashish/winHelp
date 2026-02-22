@@ -21,16 +21,16 @@ function Invoke-BackupSnapshot {
         if (-not $items) { Write-Log "No backup items configured." -Level WARN; return $null }
 
         foreach ($item in $items) {
-            Write-Log "Backing up: $($item.name) ($($item.type))" -Level DEBUG
-            if ($item.type -eq 'registry') {
-                $targetFile = Join-Path $snapshotDir "$($item.name).reg"
-                $process = Start-Process reg -ArgumentList @("export", $item.path, $targetFile, "/y") -Wait -PassThru -NoNewWindow
-                if ($process.ExitCode -ne 0) { Write-Log "reg export failed for $($item.name)" -Level WARN }
+            Write-Log "Backing up: $($item.Id) ($($item.Type))" -Level DEBUG
+            if ($item.Type -eq 'registry') {
+                $targetFile = Join-Path $snapshotDir "$($item.Id).reg"
+                $process = Start-Process "reg" -ArgumentList "export `"$($item.Key)`" `"$targetFile`" /y" -Wait -PassThru -NoNewWindow
+                if ($process.ExitCode -ne 0) { Write-Log "reg export failed for $($item.Id)" -Level WARN }
             }
-            elseif ($item.type -eq 'file') {
-                $src = [Environment]::ExpandEnvironmentVariables($item.path)
+            elseif ($item.Type -eq 'file') {
+                $src = [Environment]::ExpandEnvironmentVariables($item.Path)
                 if (Test-Path $src) {
-                    $targetFile = Join-Path $snapshotDir "$($item.name).ps1"
+                    $targetFile = Join-Path $snapshotDir "$($item.Id).ps1"
                     Copy-Item $src $targetFile -Force
                 }
                 else {
@@ -92,18 +92,20 @@ function Invoke-RestoreSnapshot {
         if (-not $items) { return $false }
 
         foreach ($item in $items) {
-            Write-Log "Restoring: $($item.name) ($($item.type))" -Level DEBUG
+            Write-Log "Restoring: $($item.Id) ($($item.Type))" -Level DEBUG
 
-            if ($item.type -eq 'registry') {
-                $srcReg = Join-Path $SnapshotPath "$($item.name).reg"
+            if ($item.Type -eq 'registry') {
+                $srcReg = Join-Path $SnapshotPath "$($item.Id).reg"
                 if (Test-Path $srcReg) {
-                    $process = Start-Process reg -ArgumentList @("import", $srcReg) -Wait -PassThru -NoNewWindow
-                    if ($process.ExitCode -ne 0) { Write-Log "reg import failed for $($item.name)" -Level WARN }
+                    $process = Start-Process "reg" -ArgumentList "import `"$srcReg`"" -Wait -PassThru -NoNewWindow
+                    if ($process.ExitCode -ne 0) { 
+                        Write-Log "reg import returned non-zero for $($item.Id) (some keys may be locked by system)" -Level DEBUG 
+                    }
                 }
             }
-            elseif ($item.type -eq 'file') {
-                $srcFile = Join-Path $SnapshotPath "$($item.name).ps1"
-                $tgtPath = [Environment]::ExpandEnvironmentVariables($item.path)
+            elseif ($item.Type -eq 'file') {
+                $srcFile = Join-Path $SnapshotPath "$($item.Id).ps1"
+                $tgtPath = [Environment]::ExpandEnvironmentVariables($item.Path)
 
                 if (Test-Path $srcFile) {
                     $tgtDir = Split-Path $tgtPath
@@ -113,7 +115,7 @@ function Invoke-RestoreSnapshot {
                         $bakPath = "$tgtPath.wh-bak"
                         Copy-Item $tgtPath $bakPath -Force
                         $tgtCapture = $tgtPath # closure variable
-                        Register-RollbackAction -Description "Restore file $($item.name) prior to snapshot import" -UndoScript {
+                        Register-RollbackAction -Description "Restore file $($item.Id) prior to snapshot import" -UndoScript {
                             Copy-Item $bakPath $tgtCapture -Force
                         }
                     }

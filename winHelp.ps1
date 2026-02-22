@@ -1,35 +1,60 @@
-#Requires -Version 7
 # winHelp Bootstrap | Remote: irm <url> | iex
 # =====================================================================
-# winHelp.ps1 — Enforces TLS 1.2+, checks Admin, downloads the repository
+# winHelp.ps1 — Universal Bootstrapper
+# Enforces TLS 1.2+, ensures PS7 + Admin, downloads the repository
 # (if run remotely), initializes core modules, and launches the GUI.
 # =====================================================================
 
-Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# ── 1. ENFORCE TLS 1.2+ ─────────────────────────────────────────────
+# ── 1. ENFORCE TLS 1.2+ & PREFS ─────────────────────────────────────────
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# ── 2. ADMIN ELEVATION ────────────────────────────────────────────────
+# ── 2. UNIVERSAL BOOTSTRAP (PS7 + ADMIN) ──────────────────────────────
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
     [Security.Principal.WindowsBuiltInRole]::Administrator
 )
-if (-not $isAdmin) {
-    Write-Host "winHelp: Relaunching with Administrator privileges..." -ForegroundColor Yellow
-    
-    # If we are remote, we must save the script to execute it elevated
+$isPS7 = $PSVersionTable.PSVersion.Major -ge 7
+
+if (-not $isAdmin -or -not $isPS7) {
     $scriptToRun = $PSCommandPath
+    # If we are remote, we must save the script to execute it elevated/in pwsh
     if ([string]::IsNullOrEmpty($scriptToRun)) {
         $scriptToRun = Join-Path $env:TEMP "winHelp-bootstrap.ps1"
         $MyInvocation.MyCommand.ScriptBlock | Set-Content -Path $scriptToRun -Encoding UTF8
     }
 
-    Start-Process pwsh -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptToRun`""
-    exit
+    if (-not $isPS7) {
+        Write-Host "winHelp: PowerShell 7 is required. Currently running on PS $($PSVersionTable.PSVersion.Major)." -ForegroundColor Cyan
+        $pwshExists = Get-Command "pwsh.exe" -ErrorAction SilentlyContinue
+        if (-not $pwshExists) {
+            Write-Host "winHelp: PowerShell 7 not found. Calling winget to install it silently..." -ForegroundColor Yellow
+            $proc = Start-Process "winget" -ArgumentList "install --id Microsoft.PowerShell --exact --source winget --accept-source-agreements --accept-package-agreements --silent" -Wait -PassThru -NoNewWindow
+            
+            if ($proc.ExitCode -ne 0) {
+                Write-Host "winHelp: Automatic installation of PowerShell 7 failed. Please install it manually." -ForegroundColor Red
+                exit 1
+            }
+            # Refresh path for current context so Start-Process can find pwsh
+            $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+        }
+    }
+
+    $argList = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptToRun`""
+    
+    if (-not $isAdmin) {
+        Write-Host "winHelp: Relaunching as Administrator in PowerShell 7..." -ForegroundColor Yellow
+        Start-Process "pwsh.exe" -Verb RunAs -ArgumentList $argList
+    }
+    else {
+        Write-Host "winHelp: Relaunching in PowerShell 7..." -ForegroundColor Yellow
+        Start-Process "pwsh.exe" -ArgumentList $argList
+    }
+    exit 0
 }
 
-# ── 3. EXECUTION POLICY (process-scoped only) ────────────────────────
+# ── 3. PS7 ENVIRONMENT SETUP ─────────────────────────────────────────
+Set-StrictMode -Version Latest
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 
 # ── 4. REMOTE DOWNLOAD / LOCAL SETUP ─────────────────────────────────
@@ -79,9 +104,9 @@ Write-Log "Configuration loaded successfully." -Level INFO
 
 # ── 8. DOT-SOURCE REMAINING CORE MODULES ─────────────────────────────
 Write-Log "Loading all core modules..." -Level INFO
-Get-ChildItem -Path "$Global:AppRoot\core\*.ps1" | ForEach-Object {
+Get-ChildItem -Path "$Global:AppRoot\core" -Filter "*.ps1" -Recurse | ForEach-Object {
     if ($_.Name -notmatch "^(Logger|Config|ErrorHandler|Rollback)\.ps1$") {
-        Write-Log "  -> Dot-sourcing: $($_.Name)" -Level DEBUG
+        Write-Log "  -> Dot-sourcing: $($_.FullName)" -Level DEBUG
         . $_.FullName
     }
 }
@@ -89,11 +114,30 @@ Get-ChildItem -Path "$Global:AppRoot\core\*.ps1" | ForEach-Object {
 # ── 9. VALIDATE CORE FUNCTIONS ───────────────────────────────────────
 $requiredFunctions = @(
     "Test-IsAdmin",
+    "Invoke-WingetUpgrade",
+    "Test-WingetAvailable",
     "Invoke-AppInstall",
+    "Invoke-AppUninstall",
     "Install-PowerShell7",
+    "Test-PS7Installed",
+    "Get-BackupSnapshots",
     "Invoke-BackupSnapshot",
+    "Invoke-RestoreSnapshot",
     "Disable-Telemetry",
-    "Set-GitConfig"
+    "Remove-Bloatware",
+    "Disable-BingSearch",
+    "Install-GitHubCLI",
+    "Start-GitHubAuth",
+    "Set-GitConfig",
+    "Get-GitHubRepos",
+    "Invoke-RepoClone",
+    "Install-IDE",
+    "Install-Extensions",
+    "Copy-IDESettings",
+    "Set-TerminalDefaults",
+    "Set-DefaultShell",
+    "Copy-NeovimConfig",
+    "Install-PSProfile"
 )
 
 foreach ($fn in $requiredFunctions) {

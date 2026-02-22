@@ -29,7 +29,7 @@ function Install-PowerShell7 {
             "--accept-source-agreements", "--accept-package-agreements"
         ) -Wait -PassThru -NoNewWindow
         $ok = $proc.ExitCode -eq 0
-        Write-Log "Install PowerShell 7: exit $($proc.ExitCode)" -Level (if ($ok) { 'INFO' } else { 'WARN' })
+        Write-Log "Install PowerShell 7: exit $($proc.ExitCode)" -Level $(if ($ok) { 'INFO' } else { 'WARN' })
         return $ok
     }
     catch {
@@ -92,7 +92,14 @@ function Set-DefaultShell {
     try {
         $settings = Get-Content $wtSettings -Raw | ConvertFrom-Json
         $ps7Profile = $settings.profiles.list |
-        Where-Object { $_.name -like "*PowerShell*" -and $_.name -notlike "*5*" } |
+        Where-Object {
+            $hasName = [bool]($_.PSObject.Properties.Match('name').Count)
+            $hasCmd = [bool]($_.PSObject.Properties.Match('commandline').Count)
+            $hasSrc = [bool]($_.PSObject.Properties.Match('source').Count)
+            ($hasName -and $_.name -match '^PowerShell$') -or 
+            ($hasCmd -and $_.commandline -match 'pwsh\.exe') -or 
+            ($hasSrc -and $_.source -eq 'Windows.Terminal.PowershellCore')
+        } |
         Select-Object -First 1
         if (-not $ps7Profile) {
             Write-Log "No PowerShell 7 profile found in WT profile list." -Level WARN

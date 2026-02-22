@@ -18,7 +18,7 @@ $Global:AppDefinitions = @(
     @{ Name = "Git"; Id = "Git.Git"; Source = "winget" },
     @{ Name = "Python 3.13"; Id = "Python.Python.3.13"; Source = "winget" },
     @{ Name = "Steam"; Id = "Valve.Steam"; Source = "winget" },
-    @{ Name = "Vim"; Id = "vim.vim"; Source = "winget" },
+    @{ Name = "Vim"; Id = "Vim.Vim"; Source = "winget" },
     @{ Name = "VScode"; Id = "Microsoft.VisualStudioCode"; Source = "winget" },
     @{ Name = "Cursor"; Id = "Anysphere.Cursor"; Source = "winget" },
     @{ Name = "Yazi"; Id = "sxyazi.yazi"; Source = "winget" },

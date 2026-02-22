@@ -25,9 +25,9 @@ function Show-MainWindow {
         }
 
         # ── 3. Wire named controls ───────────────────────────────
-        $closeBtn = $window.FindName('CloseBtn')
-        $reloadBtn = $window.FindName('ReloadBtn')
-        $themeToggle = $window.FindName('ThemeToggle')
+        $closeBtn = $window.FindName('WindowCloseButton')
+        $reloadBtn = $window.FindName('WindowReloadButton')
+        $themeToggle = $window.FindName('ThemeToggleButton')
         $titleText = $window.FindName('TitleText')
         $headerBar = $window.FindName('HeaderBar')
         $tabControl = $window.FindName('MainTabControl')

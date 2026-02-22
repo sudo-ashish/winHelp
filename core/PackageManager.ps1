@@ -25,7 +25,7 @@ function Invoke-WingetUpgrade {
             "--accept-source-agreements", "--accept-package-agreements"
         ) -Wait -PassThru -NoNewWindow
         $ok = $proc.ExitCode -eq 0
-        Write-Log "Winget upgrade finished. Exit code: $($proc.ExitCode)" -Level (if ($ok) { 'INFO' } else { 'WARN' })
+        Write-Log "Winget upgrade finished. Exit code: $($proc.ExitCode)" -Level $(if ($ok) { 'INFO' } else { 'WARN' })
         return $ok
     }
     catch {
@@ -49,7 +49,7 @@ function Invoke-AppInstall {
 
         $proc = Start-Process "winget" -ArgumentList $argList -Wait -PassThru -NoNewWindow
         $ok = $proc.ExitCode -eq 0
-        Write-Log "Install '$($App.Name)': exit $($proc.ExitCode)" -Level (if ($ok) { 'INFO' } else { 'WARN' })
+        Write-Log "Install '$($App.Name)': exit $($proc.ExitCode)" -Level $(if ($ok) { 'INFO' } else { 'WARN' })
         return $ok
     }
     catch {
@@ -69,7 +69,7 @@ function Invoke-AppUninstall {
             "--silent", "--accept-source-agreements"
         ) -Wait -PassThru -NoNewWindow
         $ok = $proc.ExitCode -eq 0
-        Write-Log "Uninstall '$($App.Name)': exit $($proc.ExitCode)" -Level (if ($ok) { 'INFO' } else { 'WARN' })
+        Write-Log "Uninstall '$($App.Name)': exit $($proc.ExitCode)" -Level $(if ($ok) { 'INFO' } else { 'WARN' })
         return $ok
     }
     catch {

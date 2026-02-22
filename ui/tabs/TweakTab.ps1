@@ -121,7 +121,7 @@ function Initialize-TweakTab {
             $row.Children.Add($btnApply)  | Out-Null
             $row.Margin = [System.Windows.Thickness]::new(0, 4, 0, 4)
 
-            $controls["Apply_$($group.Id)"] = $btnApply
+            $controls["TweakApplyButton_$($group.Id)"] = $btnApply
 
             $sec1Inner.Children.Add($row) | Out-Null
         }
@@ -134,35 +134,9 @@ function Initialize-TweakTab {
     $state['Tweaks'] = $tweaksConfig
 
     return @{
-        Name       = "tweaks"
-        Root       = $scroll
-        Controls   = $controls
-        State      = $state
-        BindEvents = {
-            $ctrls = $Global:UI.Tabs.tweaks.Controls
-            $state = $Global:UI.Tabs.tweaks.State
-
-            $state.Tweaks | ForEach-Object {
-                $tweak = $_
-                $actionName = $tweak.Id
-                $btnApply = $ctrls["Apply_$actionName"]
-                
-                if ($btnApply) {
-                    $btnApply.Add_Click({
-                            $btnApply.IsEnabled = $false
-                            & $Global:SetStatus "Applying tweak: $actionName..."
-
-                            $ok = $false
-                            if ($actionName -eq 'disable-telemetry') { $ok = Disable-Telemetry }
-                            elseif ($actionName -eq 'remove-bloatware') { $ok = Remove-Bloatware }
-                            elseif ($actionName -eq 'disable-bing-search') { $ok = Disable-BingSearch }
-                            else { Write-Log "Unknown action: $actionName" -Level ERROR }
-
-                            & $Global:SetStatus (if ($ok) { "Tweak applied ✓" } else { "Failed — see log" })
-                            $btnApply.IsEnabled = $true
-                        }.GetNewClosure())
-                }
-            }
-        }
+        Name     = "tweaks"
+        Root     = $scroll
+        Controls = $controls
+        State    = $state
     }
 }
