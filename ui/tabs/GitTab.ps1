@@ -110,17 +110,7 @@ function Initialize-GitTab {
     }
     catch { }
 
-    $btnApplyGit.Add_Click({
-            $name = $tbGitUser.Text.Trim()
-            $email = $tbGitEmail.Text.Trim()
-            if ([string]::IsNullOrEmpty($name) -or [string]::IsNullOrEmpty($email)) {
-                [System.Windows.MessageBox]::Show("Both fields are required.", "Input Error") | Out-Null
-                return
-            }
-            & $Global:SetStatus "Applying Git config..."
-            $ok = Set-GitConfig -UserName $name -UserEmail $email
-            & $Global:SetStatus (if ($ok) { "Git config applied ✓" } else { "Git config failed — see log" })
-        })
+
 
     $outer.Children.Add($sec1) | Out-Null
 
@@ -153,29 +143,6 @@ function Initialize-GitTab {
     $ghStatus.Margin = [System.Windows.Thickness]::new(0, 6, 0, 0)
     $sec2Inner.Children.Add($ghStatus) | Out-Null
 
-    $btnInstallGH.Add_Click({
-            $btnInstallGH.IsEnabled = $false
-            & $Global:SetStatus "Installing GitHub CLI..."
-            $ok = Install-GitHubCLI
-            $ghStatus.Text = if ($ok) { "GitHub CLI installed ✓" } else { "Install failed — see log" }
-            & $Global:SetStatus $ghStatus.Text
-            $btnInstallGH.IsEnabled = $true
-        })
-
-    $btnAuth.Add_Click({
-            $result = Start-GitHubAuth
-            if ($result -eq $true) {
-                $ghStatus.Text = "Already authenticated with GitHub ✓"
-            }
-            else {
-                [System.Windows.MessageBox]::Show(
-                    "GitHub auth window opened.`nComplete sign-in in the browser, then return here.",
-                    "winHelp — GitHub Auth"
-                ) | Out-Null
-                $ghStatus.Text = "Complete auth in the opened window..."
-            }
-            & $Global:SetStatus $ghStatus.Text
-        })
 
     $outer.Children.Add($sec2) | Out-Null
 
@@ -220,63 +187,16 @@ function Initialize-GitTab {
     $btnClone = New-Button "Clone Selected" -Accent $true
     $sec3Inner.Children.Add($btnClone) | Out-Null
 
-    $btnBrowse.Add_Click({
-            try {
-                Add-Type -AssemblyName System.Windows.Forms
-                $dlg = [System.Windows.Forms.FolderBrowserDialog]::new()
-                $dlg.Description = "Select clone destination folder"
-                if ($dlg.ShowDialog() -eq 'OK') { $tbClonePath.Text = $dlg.SelectedPath }
-            }
-            catch { Write-Log "FolderBrowserDialog error: $_" -Level WARN }
-        })
 
-    $btnFetch.Add_Click({
-            $btnFetch.IsEnabled = $false
-            & $Global:SetStatus "Fetching repos from GitHub..."
-            $lbRepos.Items.Clear()
-            $repos = Get-GitHubRepos
-            foreach ($r in $repos) {
-                $item = [System.Windows.Controls.ListBoxItem]::new()
-                $item.Content = "$($r.name)$(if($r.isPrivate){ ' 🔒' })"
-                $item.Tag = $r.url
-                $lbRepos.Items.Add($item) | Out-Null
-            }
-            & $Global:SetStatus "Fetched $($repos.Count) repos."
-            $btnFetch.IsEnabled = $true
-        })
-
-    $btnClone.Add_Click({
-            $selected = $lbRepos.SelectedItems
-            if ($selected.Count -eq 0) {
-                [System.Windows.MessageBox]::Show("Select at least one repo.", "winHelp") | Out-Null
-                return
-            }
-            $btnClone.IsEnabled = $false
-            $cloned = 0; $failed = 0
-            foreach ($item in $selected) {
-                $url = $item.Tag
-                $name = ($item.Content -replace ' 🔒', '').Trim()
-                $dest = Join-Path $tbClonePath.Text $name
-                & $Global:SetStatus "Cloning $name..."
-                $ok = Invoke-RepoClone -RepoUrl $url -TargetPath $dest
-                if ($ok) { $cloned++ } else { $failed++ }
-            }
-            & $Global:SetStatus "Cloned $cloned / $($selected.Count) repos."
-            $btnClone.IsEnabled = $true
-            [System.Windows.MessageBox]::Show(
-                "Cloned: $cloned`nFailed: $failed",
-                "winHelp — Clone Complete", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information
-            ) | Out-Null
-        })
 
     $outer.Children.Add($sec3) | Out-Null
 
     $scroll.Content = $outer
 
     return @{
-        Name     = "git"
-        Root     = $scroll
-        Controls = @{
+        Name       = "git"
+        Root       = $scroll
+        Controls   = @{
             ApplyGitConfigButton = $btnApplyGit
             GitUserTextBox       = $tbGitUser
             GitEmailTextBox      = $tbGitEmail
@@ -287,6 +207,95 @@ function Initialize-GitTab {
             FetchReposButton     = $btnFetch
             RepoListBox          = $lbRepos
             CloneReposButton     = $btnClone
+            GHStatusText         = $ghStatus
+        }
+        BindEvents = {
+            $ctrls = $Global:UI.Tabs.git.Controls
+
+            $ctrls.ApplyGitConfigButton.Add_Click({
+                    $name = $ctrls.GitUserTextBox.Text.Trim()
+                    $email = $ctrls.GitEmailTextBox.Text.Trim()
+                    if ([string]::IsNullOrEmpty($name) -or [string]::IsNullOrEmpty($email)) {
+                        [System.Windows.MessageBox]::Show("Both fields are required.", "Input Error") | Out-Null
+                        return
+                    }
+                    & $Global:SetStatus "Applying Git config..."
+                    $ok = Set-GitConfig -UserName $name -UserEmail $email
+                    & $Global:SetStatus (if ($ok) { "Git config applied ✓" } else { "Git config failed — see log" })
+                })
+
+            $ctrls.InstallGHButton.Add_Click({
+                    $ctrls.InstallGHButton.IsEnabled = $false
+                    & $Global:SetStatus "Installing GitHub CLI..."
+                    $ok = Install-GitHubCLI
+                    $ctrls.GHStatusText.Text = if ($ok) { "GitHub CLI installed ✓" } else { "Install failed — see log" }
+                    & $Global:SetStatus $ctrls.GHStatusText.Text
+                    $ctrls.InstallGHButton.IsEnabled = $true
+                })
+
+            $ctrls.AuthGHButton.Add_Click({
+                    $result = Start-GitHubAuth
+                    if ($result -eq $true) {
+                        $ctrls.GHStatusText.Text = "Already authenticated with GitHub ✓"
+                    }
+                    else {
+                        [System.Windows.MessageBox]::Show(
+                            "GitHub auth window opened.`nComplete sign-in in the browser, then return here.",
+                            "winHelp — GitHub Auth"
+                        ) | Out-Null
+                        $ctrls.GHStatusText.Text = "Complete auth in the opened window..."
+                    }
+                    & $Global:SetStatus $ctrls.GHStatusText.Text
+                })
+
+            $ctrls.BrowsePathButton.Add_Click({
+                    try {
+                        Add-Type -AssemblyName System.Windows.Forms
+                        $dlg = [System.Windows.Forms.FolderBrowserDialog]::new()
+                        $dlg.Description = "Select clone destination folder"
+                        if ($dlg.ShowDialog() -eq 'OK') { $ctrls.ClonePathTextBox.Text = $dlg.SelectedPath }
+                    }
+                    catch { Write-Log "FolderBrowserDialog error: $_" -Level WARN }
+                })
+
+            $ctrls.FetchReposButton.Add_Click({
+                    $ctrls.FetchReposButton.IsEnabled = $false
+                    & $Global:SetStatus "Fetching repos from GitHub..."
+                    $ctrls.RepoListBox.Items.Clear()
+                    $repos = Get-GitHubRepos
+                    foreach ($r in $repos) {
+                        $item = [System.Windows.Controls.ListBoxItem]::new()
+                        $item.Content = "$($r.name)$(if($r.isPrivate){ ' 🔒' })"
+                        $item.Tag = $r.url
+                        $ctrls.RepoListBox.Items.Add($item) | Out-Null
+                    }
+                    & $Global:SetStatus "Fetched $($repos.Count) repos."
+                    $ctrls.FetchReposButton.IsEnabled = $true
+                })
+
+            $ctrls.CloneReposButton.Add_Click({
+                    $selected = $ctrls.RepoListBox.SelectedItems
+                    if ($selected.Count -eq 0) {
+                        [System.Windows.MessageBox]::Show("Select at least one repo.", "winHelp") | Out-Null
+                        return
+                    }
+                    $ctrls.CloneReposButton.IsEnabled = $false
+                    $cloned = 0; $failed = 0
+                    foreach ($item in $selected) {
+                        $url = $item.Tag
+                        $name = ($item.Content -replace ' 🔒', '').Trim()
+                        $dest = Join-Path $ctrls.ClonePathTextBox.Text $name
+                        & $Global:SetStatus "Cloning $name..."
+                        $ok = Invoke-RepoClone -RepoUrl $url -TargetPath $dest
+                        if ($ok) { $cloned++ } else { $failed++ }
+                    }
+                    & $Global:SetStatus "Cloned $cloned / $($selected.Count) repos."
+                    $ctrls.CloneReposButton.IsEnabled = $true
+                    [System.Windows.MessageBox]::Show(
+                        "Cloned: $cloned`nFailed: $failed",
+                        "winHelp — Clone Complete", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information
+                    ) | Out-Null
+                })
         }
     }
 }

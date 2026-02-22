@@ -98,34 +98,50 @@ function Invoke-TabContent {
             Write-Log "Tab module not found: $modulePath" -Level WARN
             return
         }
-        . $modulePath
         
-        # 2. Each tab loader must return the object
-        $tabObj = & $initFn -Window $Window
+        try {
+            . $modulePath
+            
+            # 2. Each tab loader must return the object
+            $tabObj = & $initFn -Window $Window
 
-        if (-not $tabObj -or -not $tabObj.Root) {
-            throw "Tab loader $initFn did not return a valid object for $TabId"
-        }
-
-        # 8. Add diagnostics: Log every registered control
-        Write-Log "Registering UI Controls for [$TabId]:" -Level DEBUG
-        
-        # 7. Validate all controls on load
-        if ($tabObj.Controls) {
-            foreach ($key in $tabObj.Controls.Keys) {
-                $ctrl = $tabObj.Controls[$key]
-                if (-not $ctrl) {
-                    throw "Missing UI control '$key' in $($tabObj.Name)"
-                }
-                Write-Log "  - $key ($($ctrl.GetType().Name))" -Level DEBUG
+            if (-not $tabObj -or -not $tabObj.Root) {
+                throw "Tab loader $initFn did not return a valid object for $TabId"
             }
+
+            # 8. Add diagnostics: Log every registered control
+            Write-Log "Registering UI Controls for [$TabId]:" -Level DEBUG
+            
+            # 7. Validate all controls on load
+            if ($tabObj.Controls) {
+                foreach ($key in $tabObj.Controls.Keys) {
+                    $ctrl = $tabObj.Controls[$key]
+                    if (-not $ctrl) {
+                        throw "Missing UI control '$key' in $($tabObj.Name)"
+                    }
+                    Write-Log "  - $key ($($ctrl.GetType().Name))" -Level DEBUG
+                }
+            }
+
+            # 3. MainWindow/TabManager must register:
+            $Global:UI.Tabs[$TabId] = $tabObj
+
+            # 5. Bind events only after control validation
+            if ($tabObj.BindEvents) {
+                Write-Log "Binding events for tab [$TabId]..." -Level DEBUG
+                & $tabObj.BindEvents
+            }
+
+            # Display the loaded tab
+            $ContentArea.Children.Clear()
+            $ContentArea.Children.Add($tabObj.Root) | Out-Null
         }
-
-        # 3. MainWindow/TabManager must register:
-        $Global:UI.Tabs[$TabId] = $tabObj
-
-        # Display the loaded tab
-        $ContentArea.Children.Clear()
-        $ContentArea.Children.Add($tabObj.Root) | Out-Null
+        catch {
+            Write-Log "FATAL: Tab architecture invalid for [$TabId]: $_" -Level ERROR
+            if ($_.Exception.InnerException) {
+                Write-Log "InnerException: $($_.Exception.InnerException.Message)" -Level ERROR
+            }
+            throw # Fail loudly
+        }
     }
 }

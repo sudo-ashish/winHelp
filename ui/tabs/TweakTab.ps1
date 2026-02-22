@@ -8,14 +8,8 @@ function Initialize-TweakTab {
         [Parameter(Mandatory)][System.Windows.Window]$Window
     )
 
-    $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path (Split-Path $PSScriptRoot) }
-    if (-not (Get-Command Disable-Telemetry -ErrorAction SilentlyContinue)) {
-        . "$appRoot\core\TweakManager.ps1"
-        # Export functions explicitly to the global scope so .GetNewClosure() can see them
-        $Global:DisableTelemetry = (Get-Command Disable-Telemetry).ScriptBlock
-        $Global:RemoveBloatware = (Get-Command Remove-Bloatware).ScriptBlock
-        $Global:DisableBingSearch = (Get-Command Disable-BingSearch).ScriptBlock
-    }
+    $controls = @{}
+    $state = @{}
 
     function New-Section {
         $b = [System.Windows.Controls.Border]::new()
@@ -127,22 +121,7 @@ function Initialize-TweakTab {
             $row.Children.Add($btnApply)  | Out-Null
             $row.Margin = [System.Windows.Thickness]::new(0, 4, 0, 4)
 
-            $btnRef = $btnApply
-            $actionRef = $group.Id
-            $btnApply.Add_Click({
-                    $btnRef.IsEnabled = $false
-                    & $Global:SetStatus "Applying tweak: $($actionRef)..."
-
-                    $ok = $false
-                    # Dispatch based on action name
-                    if ($actionRef -eq 'disable-telemetry') { $ok = & $Global:DisableTelemetry }
-                    elseif ($actionRef -eq 'remove-bloatware') { $ok = & $Global:RemoveBloatware }
-                    elseif ($actionRef -eq 'disable-bing-search') { $ok = & $Global:DisableBingSearch }
-                    else { Write-Log "Unknown action: $($actionRef)" -Level ERROR }
-
-                    & $Global:SetStatus (if ($ok) { "Tweak applied ✓" } else { "Failed — see log" })
-                    $btnRef.IsEnabled = $true
-                }.GetNewClosure())
+            $controls["Apply_$($group.Id)"] = $btnApply
 
             $sec1Inner.Children.Add($row) | Out-Null
         }
@@ -152,9 +131,38 @@ function Initialize-TweakTab {
 
     $scroll.Content = $outer
 
+    $state['Tweaks'] = $tweaksConfig
+
     return @{
-        Name     = "tweaks"
-        Root     = $scroll
-        Controls = @{} # dynamic
+        Name       = "tweaks"
+        Root       = $scroll
+        Controls   = $controls
+        State      = $state
+        BindEvents = {
+            $ctrls = $Global:UI.Tabs.tweaks.Controls
+            $state = $Global:UI.Tabs.tweaks.State
+
+            $state.Tweaks | ForEach-Object {
+                $tweak = $_
+                $actionName = $tweak.Id
+                $btnApply = $ctrls["Apply_$actionName"]
+                
+                if ($btnApply) {
+                    $btnApply.Add_Click({
+                            $btnApply.IsEnabled = $false
+                            & $Global:SetStatus "Applying tweak: $actionName..."
+
+                            $ok = $false
+                            if ($actionName -eq 'disable-telemetry') { $ok = Disable-Telemetry }
+                            elseif ($actionName -eq 'remove-bloatware') { $ok = Remove-Bloatware }
+                            elseif ($actionName -eq 'disable-bing-search') { $ok = Disable-BingSearch }
+                            else { Write-Log "Unknown action: $actionName" -Level ERROR }
+
+                            & $Global:SetStatus (if ($ok) { "Tweak applied ✓" } else { "Failed — see log" })
+                            $btnApply.IsEnabled = $true
+                        }.GetNewClosure())
+                }
+            }
+        }
     }
 }

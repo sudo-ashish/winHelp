@@ -63,11 +63,11 @@ $Global:Config = $null
 $Global:LogFile = $null
 $Global:RollbackStack = [System.Collections.Generic.Stack[hashtable]]::new()
 
-# ── 6. DOT-SOURCE CORE MODULES ───────────────────────────────────────
-$coreModules = @("core\Logger.ps1", "core\Config.ps1", "core\ErrorHandler.ps1", "core\Rollback.ps1")
-foreach ($module in $coreModules) {
+# ── 6. DOT-SOURCE CORE FOUNDATIONS ───────────────────────────────────────
+$foundationModules = @("core\Logger.ps1", "core\Config.ps1", "core\ErrorHandler.ps1", "core\Rollback.ps1")
+foreach ($module in $foundationModules) {
     $modulePath = Join-Path $Global:AppRoot $module
-    if (-not (Test-Path $modulePath)) { throw "FATAL: Core module not found: $modulePath" }
+    if (-not (Test-Path $modulePath)) { throw "FATAL: Foundation module not found: $modulePath" }
     . $modulePath
 }
 
@@ -77,7 +77,34 @@ Write-Log "winHelp starting — AppRoot: $Global:AppRoot" -Level INFO
 Initialize-Config -ConfigDir (Join-Path $Global:AppRoot "config")
 Write-Log "Configuration loaded successfully." -Level INFO
 
-# ── 8. LAUNCH GUI ────────────────────────────────────────────────────
+# ── 8. DOT-SOURCE REMAINING CORE MODULES ─────────────────────────────
+Write-Log "Loading all core modules..." -Level INFO
+Get-ChildItem -Path "$Global:AppRoot\core\*.ps1" | ForEach-Object {
+    if ($_.Name -notmatch "^(Logger|Config|ErrorHandler|Rollback)\.ps1$") {
+        Write-Log "  -> Dot-sourcing: $($_.Name)" -Level DEBUG
+        . $_.FullName
+    }
+}
+
+# ── 9. VALIDATE CORE FUNCTIONS ───────────────────────────────────────
+$requiredFunctions = @(
+    "Test-IsAdmin",
+    "Invoke-AppInstall",
+    "Install-PowerShell7",
+    "Invoke-BackupSnapshot",
+    "Disable-Telemetry",
+    "Set-GitConfig"
+)
+
+foreach ($fn in $requiredFunctions) {
+    if (-not (Get-Command $fn -ErrorAction SilentlyContinue)) {
+        Write-Log "Required function missing: $fn" -Level ERROR
+        throw "Architecture Invalid: Required function missing: $fn"
+    }
+}
+Write-Log "All required core functions validated." -Level INFO
+
+# ── 10. LAUNCH GUI ────────────────────────────────────────────────────
 Write-Log "winHelp bootstrap complete. Launching GUI..." -Level INFO
 $mainWindow = Join-Path $Global:AppRoot "ui\MainWindow.ps1"
 

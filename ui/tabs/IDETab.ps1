@@ -8,23 +8,9 @@ function Initialize-IDETab {
         [Parameter(Mandatory)][System.Windows.Window]$Window
     )
 
-    $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path (Split-Path $PSScriptRoot) }
-    foreach ($mod in @('IDEManager', 'TerminalManager', 'ProfileManager')) {
-        $fn = @{ IDEManager = 'Install-IDE'; TerminalManager = 'Set-TerminalDefaults'; ProfileManager = 'Test-PS7Installed' }[$mod]
-        if (-not (Get-Command $fn -ErrorAction SilentlyContinue)) {
-            . "$appRoot\core\$mod.ps1"
-        }
-    }
-    
-    # Export functions to Global scope so closures can see them
-    $Global:InstallIDE = (Get-Command Install-IDE).ScriptBlock
-    $Global:InstallExtensions = (Get-Command Install-Extensions).ScriptBlock
-    $Global:CopyIDESettings = (Get-Command Copy-IDESettings).ScriptBlock
-    $Global:SetTerminalDefaults = (Get-Command Set-TerminalDefaults).ScriptBlock
-    $Global:SetDefaultShell = (Get-Command Set-DefaultShell).ScriptBlock
-    $Global:CopyNeovimConfig = (Get-Command Copy-NeovimConfig).ScriptBlock
-    $Global:InstallPowerShell7 = (Get-Command Install-PowerShell7 -ErrorAction SilentlyContinue)?.ScriptBlock
-    $Global:InstallPSProfile = (Get-Command Install-PSProfile).ScriptBlock
+    $controls = @{}
+    $state = @{}
+    $btnInstPS7 = $null
 
     # ── Shared helpers ───────────────────────────────────────────
     function New-Section {
@@ -100,15 +86,7 @@ function Initialize-IDETab {
         $row.Margin = [System.Windows.Thickness]::new(0, 4, 0, 4)
         $sec1Inner.Children.Add($row) | Out-Null
 
-        $ideRef = $ide  # capture for closure
-        $btnRef = $btnInst
-        $btnInst.Add_Click({
-                $btnRef.IsEnabled = $false
-                & $Global:SetStatus "Installing $($ideRef.Name)..."
-                $ok = & $Global:InstallIDE -IDE $ideRef
-                & $Global:SetStatus (if ($ok) { "$($ideRef.Name) installed ✓" } else { "Install failed — see log" })
-                $btnRef.IsEnabled = $true
-            }.GetNewClosure())
+        $controls["Install_$($ide.Name)"] = $btnInst
     }
     $outer.Children.Add($sec1) | Out-Null
 
@@ -145,21 +123,8 @@ function Initialize-IDETab {
         $btnInstExt = New-Button "Install Extensions for $($ide.Name)" -Accent $true
         $sec2Inner.Children.Add($btnInstExt) | Out-Null
 
-        $ideRef = $ide
-        $cbListRef = $extCheckboxes
-        $btnExtRef = $btnInstExt
-        $btnInstExt.Add_Click({
-                $selected = $cbListRef | Where-Object { $_.IsChecked } | ForEach-Object { $_.Content }
-                if ($selected.Count -eq 0) {
-                    [System.Windows.MessageBox]::Show("No extensions selected for $($ideRef.Name).", "winHelp") | Out-Null
-                    return
-                }
-                $btnExtRef.IsEnabled = $false
-                & $Global:SetStatus "Installing $($selected.Count) extensions for $($ideRef.Name)..."
-                $res = & $Global:InstallExtensions -IDE $ideRef -Extensions $selected
-                & $Global:SetStatus "Extensions done: $($res.Installed.Count) installed, $($res.Failed.Count) failed."
-                $btnExtRef.IsEnabled = $true
-            }.GetNewClosure())
+        $controls["InstallExt_$($ide.Name)"] = $btnInstExt
+        $state["ExtCB_$($ide.Name)"] = $extCheckboxes
 
         if ($ide -ne $ides[-1]) { $sec2Inner.Children.Add((New-Separator)) | Out-Null }
     }
@@ -174,14 +139,7 @@ function Initialize-IDETab {
     foreach ($ide in $ides) {
         $btnSettings = New-Button "Deploy $($ide.Name) Settings"
         $sec3Inner.Children.Add($btnSettings) | Out-Null
-        $ideRef = $ide; $btnRef = $btnSettings
-        $btnSettings.Add_Click({
-                $btnRef.IsEnabled = $false
-                & $Global:SetStatus "Deploying $($ideRef.Name) settings..."
-                $ok = & $Global:CopyIDESettings -IDE $ideRef
-                & $Global:SetStatus (if ($ok) { "$($ideRef.Name) settings deployed ✓" } else { "Deploy failed — see log" })
-                $btnRef.IsEnabled = $true
-            }.GetNewClosure())
+        $controls["DeploySettings_$($ide.Name)"] = $btnSettings
     }
 
     $sec3Inner.Children.Add((New-Separator)) | Out-Null
@@ -191,20 +149,7 @@ function Initialize-IDETab {
     $sec3Inner.Children.Add($btnWT) | Out-Null
     $sec3Inner.Children.Add($btnPS7Default) | Out-Null
 
-    $btnWT.Add_Click({
-            $btnWT.IsEnabled = $false
-            & $Global:SetStatus "Merging Windows Terminal defaults..."
-            $ok = Set-TerminalDefaults
-            & $Global:SetStatus (if ($ok) { "WT defaults merged ✓" } else { "Merge failed — see log" })
-            $btnWT.IsEnabled = $true
-        })
-    $btnPS7Default.Add_Click({
-            $btnPS7Default.IsEnabled = $false
-            & $Global:SetStatus "Setting PS7 as default shell..."
-            $ok = Set-DefaultShell
-            & $Global:SetStatus (if ($ok) { "Default shell set to PS7 ✓" } else { "Failed — see log" })
-            $btnPS7Default.IsEnabled = $true
-        })
+
 
     $outer.Children.Add($sec3) | Out-Null
 
@@ -216,13 +161,7 @@ function Initialize-IDETab {
 
     $btnNvim = New-Button "Copy Neovim Config"
     $sec4Inner.Children.Add($btnNvim) | Out-Null
-    $btnNvim.Add_Click({
-            $btnNvim.IsEnabled = $false
-            & $Global:SetStatus "Copying Neovim config..."
-            $ok = Copy-NeovimConfig
-            & $Global:SetStatus (if ($ok) { "Neovim config deployed ✓" } else { "Copy failed — see log" })
-            $btnNvim.IsEnabled = $true
-        })
+
 
     $sec4Inner.Children.Add((New-Separator)) | Out-Null
 
@@ -240,14 +179,7 @@ function Initialize-IDETab {
         $ps7Status.Foreground = [System.Windows.Media.SolidColorBrush]::new([System.Windows.Media.Colors]::Orange)
         $sec4Inner.Children.Add($ps7Status) | Out-Null
         $btnInstPS7 = New-Button "Install PowerShell 7" -Accent $true
-        $btnInstPS7Ref = $btnInstPS7
-        $btnInstPS7.Add_Click({
-                $btnInstPS7Ref.IsEnabled = $false
-                & $Global:SetStatus "Installing PowerShell 7..."
-                $ok = Install-PowerShell7
-                & $Global:SetStatus (if ($ok) { "PowerShell 7 installed ✓" } else { "Install failed — see log" })
-                $btnInstPS7Ref.IsEnabled = $true
-            })
+
         $sec4Inner.Children.Add($btnInstPS7) | Out-Null
     }
 
@@ -262,29 +194,114 @@ function Initialize-IDETab {
 
     $btnProfile = New-Button "Deploy PowerShell Profile" -Accent $true
     $sec4Inner.Children.Add($btnProfile) | Out-Null
-    $btnProfile.Add_Click({
-            $btnProfile.IsEnabled = $false
-            & $Global:SetStatus "Deploying PS7 profile..."
-            $ok = Install-PSProfile
-            & $Global:SetStatus (if ($ok) { "PS7 profile deployed ✓ (backup at .wh-bak)" } else { "Deploy failed — see log" })
-            $btnProfile.IsEnabled = $true
-        })
+
 
     $outer.Children.Add($sec4) | Out-Null
 
     $scroll.Content = $outer
 
-    $controls = @{
-        TerminalDefaultsButton = $btnWT
-        SetPS7DefaultButton    = $btnPS7Default
-        CopyNeovimConfigButton = $btnNvim
-        DeployProfileButton    = $btnProfile
-    }
+    $controls['TerminalDefaultsButton'] = $btnWT
+    $controls['SetPS7DefaultButton'] = $btnPS7Default
+    $controls['CopyNeovimConfigButton'] = $btnNvim
+    $controls['DeployProfileButton'] = $btnProfile
     if ($btnInstPS7) { $controls['InstallPS7Button'] = $btnInstPS7 }
 
+    $state['IDEs'] = $ides
+
     return @{
-        Name     = "ide"
-        Root     = $scroll
-        Controls = $controls
+        Name       = "ide"
+        Root       = $scroll
+        Controls   = $controls
+        State      = $state
+        BindEvents = {
+            $ctrls = $Global:UI.Tabs.ide.Controls
+            $state = $Global:UI.Tabs.ide.State
+
+            # Dynamic IDE bindings
+            $state.IDEs | ForEach-Object {
+                $ideConfig = $_
+                $ideName = $ideConfig.Name
+                $btnInst = $ctrls["Install_$ideName"]
+                $btnExt = $ctrls["InstallExt_$ideName"]
+                $btnSet = $ctrls["DeploySettings_$ideName"]
+                $cbList = $state["ExtCB_$ideName"]
+
+                if ($btnInst) {
+                    $btnInst.Add_Click({
+                            $btnInst.IsEnabled = $false
+                            & $Global:SetStatus "Installing $ideName..."
+                            $ok = Install-IDE -IDE $ideConfig
+                            & $Global:SetStatus (if ($ok) { "$ideName installed ✓" } else { "Install failed — see log" })
+                            $btnInst.IsEnabled = $true
+                        }.GetNewClosure())
+                }
+                if ($btnExt) {
+                    $btnExt.Add_Click({
+                            $selected = $cbList | Where-Object { $_.IsChecked } | ForEach-Object { $_.Content }
+                            if ($selected.Count -eq 0) {
+                                [System.Windows.MessageBox]::Show("No extensions selected for $ideName.", "winHelp") | Out-Null
+                                return
+                            }
+                            $btnExt.IsEnabled = $false
+                            & $Global:SetStatus "Installing $($selected.Count) extensions for $ideName..."
+                            $res = Install-Extensions -IDE $ideConfig -Extensions $selected
+                            & $Global:SetStatus "Extensions done: $($res.Installed.Count) installed, $($res.Failed.Count) failed."
+                            $btnExt.IsEnabled = $true
+                        }.GetNewClosure())
+                }
+                if ($btnSet) {
+                    $btnSet.Add_Click({
+                            $btnSet.IsEnabled = $false
+                            & $Global:SetStatus "Deploying $ideName settings..."
+                            $ok = Copy-IDESettings -IDE $ideConfig
+                            & $Global:SetStatus (if ($ok) { "$ideName settings deployed ✓" } else { "Deploy failed — see log" })
+                            $btnSet.IsEnabled = $true
+                        }.GetNewClosure())
+                }
+            }
+
+            # Static bindings
+            $ctrls.TerminalDefaultsButton.Add_Click({
+                    $ctrls.TerminalDefaultsButton.IsEnabled = $false
+                    & $Global:SetStatus "Merging Windows Terminal defaults..."
+                    $ok = Set-TerminalDefaults
+                    & $Global:SetStatus (if ($ok) { "WT defaults merged ✓" } else { "Merge failed — see log" })
+                    $ctrls.TerminalDefaultsButton.IsEnabled = $true
+                })
+
+            $ctrls.SetPS7DefaultButton.Add_Click({
+                    $ctrls.SetPS7DefaultButton.IsEnabled = $false
+                    & $Global:SetStatus "Setting PS7 as default shell..."
+                    $ok = Set-DefaultShell
+                    & $Global:SetStatus (if ($ok) { "Default shell set to PS7 ✓" } else { "Failed — see log" })
+                    $ctrls.SetPS7DefaultButton.IsEnabled = $true
+                })
+
+            $ctrls.CopyNeovimConfigButton.Add_Click({
+                    $ctrls.CopyNeovimConfigButton.IsEnabled = $false
+                    & $Global:SetStatus "Copying Neovim config..."
+                    $ok = Copy-NeovimConfig
+                    & $Global:SetStatus (if ($ok) { "Neovim config deployed ✓" } else { "Copy failed — see log" })
+                    $ctrls.CopyNeovimConfigButton.IsEnabled = $true
+                })
+
+            if ($ctrls.InstallPS7Button) {
+                $ctrls.InstallPS7Button.Add_Click({
+                        $ctrls.InstallPS7Button.IsEnabled = $false
+                        & $Global:SetStatus "Installing PowerShell 7..."
+                        $ok = Install-PowerShell7
+                        & $Global:SetStatus (if ($ok) { "PowerShell 7 installed ✓" } else { "Install failed — see log" })
+                        $ctrls.InstallPS7Button.IsEnabled = $true
+                    })
+            }
+
+            $ctrls.DeployProfileButton.Add_Click({
+                    $ctrls.DeployProfileButton.IsEnabled = $false
+                    & $Global:SetStatus "Deploying PS7 profile..."
+                    $ok = Install-PSProfile
+                    & $Global:SetStatus (if ($ok) { "PS7 profile deployed ✓ (backup at .wh-bak)" } else { "Deploy failed — see log" })
+                    $ctrls.DeployProfileButton.IsEnabled = $true
+                })
+        }
     }
 }
