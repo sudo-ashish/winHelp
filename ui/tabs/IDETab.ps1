@@ -17,6 +17,16 @@ function Initialize-IDETab {
             . "$appRoot\core\$mod.ps1"
         }
     }
+    
+    # Export functions to Global scope so closures can see them
+    $Global:InstallIDE = (Get-Command Install-IDE).ScriptBlock
+    $Global:InstallExtensions = (Get-Command Install-Extensions).ScriptBlock
+    $Global:CopyIDESettings = (Get-Command Copy-IDESettings).ScriptBlock
+    $Global:SetTerminalDefaults = (Get-Command Set-TerminalDefaults).ScriptBlock
+    $Global:SetDefaultShell = (Get-Command Set-DefaultShell).ScriptBlock
+    $Global:CopyNeovimConfig = (Get-Command Copy-NeovimConfig).ScriptBlock
+    $Global:InstallPowerShell7 = (Get-Command Install-PowerShell7 -ErrorAction SilentlyContinue)?.ScriptBlock
+    $Global:InstallPSProfile = (Get-Command Install-PSProfile).ScriptBlock
 
     # ── Shared helpers ───────────────────────────────────────────
     function New-Section {
@@ -97,7 +107,7 @@ function Initialize-IDETab {
         $btnInst.Add_Click({
                 $btnRef.IsEnabled = $false
                 & $Global:SetStatus "Installing $($ideRef.Name)..."
-                $ok = Install-IDE -IDE $ideRef
+                $ok = & $Global:InstallIDE -IDE $ideRef
                 & $Global:SetStatus (if ($ok) { "$($ideRef.Name) installed ✓" } else { "Install failed — see log" })
                 $btnRef.IsEnabled = $true
             }.GetNewClosure())
@@ -148,7 +158,7 @@ function Initialize-IDETab {
                 }
                 $btnExtRef.IsEnabled = $false
                 & $Global:SetStatus "Installing $($selected.Count) extensions for $($ideRef.Name)..."
-                $res = Install-Extensions -IDE $ideRef -Extensions $selected
+                $res = & $Global:InstallExtensions -IDE $ideRef -Extensions $selected
                 & $Global:SetStatus "Extensions done: $($res.Installed.Count) installed, $($res.Failed.Count) failed."
                 $btnExtRef.IsEnabled = $true
             }.GetNewClosure())
@@ -170,7 +180,7 @@ function Initialize-IDETab {
         $btnSettings.Add_Click({
                 $btnRef.IsEnabled = $false
                 & $Global:SetStatus "Deploying $($ideRef.Name) settings..."
-                $ok = Copy-IDESettings -IDE $ideRef
+                $ok = & $Global:CopyIDESettings -IDE $ideRef
                 & $Global:SetStatus (if ($ok) { "$($ideRef.Name) settings deployed ✓" } else { "Deploy failed — see log" })
                 $btnRef.IsEnabled = $true
             }.GetNewClosure())

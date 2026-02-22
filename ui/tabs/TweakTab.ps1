@@ -13,6 +13,10 @@ function Initialize-TweakTab {
     $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path (Split-Path $PSScriptRoot) }
     if (-not (Get-Command Disable-Telemetry -ErrorAction SilentlyContinue)) {
         . "$appRoot\core\TweakManager.ps1"
+        # Export functions explicitly to the global scope so .GetNewClosure() can see them
+        $Global:DisableTelemetry = (Get-Command Disable-Telemetry).ScriptBlock
+        $Global:RemoveBloatware = (Get-Command Remove-Bloatware).ScriptBlock
+        $Global:DisableBingSearch = (Get-Command Disable-BingSearch).ScriptBlock
     }
 
     function New-Section {
@@ -133,9 +137,9 @@ function Initialize-TweakTab {
 
                     $ok = $false
                     # Dispatch based on action name
-                    if ($actionRef -eq 'disable-telemetry') { $ok = Disable-Telemetry }
-                    elseif ($actionRef -eq 'remove-bloatware') { $ok = Remove-Bloatware }
-                    elseif ($actionRef -eq 'disable-bing-search') { $ok = Disable-BingSearch }
+                    if ($actionRef -eq 'disable-telemetry') { $ok = & $Global:DisableTelemetry }
+                    elseif ($actionRef -eq 'remove-bloatware') { $ok = & $Global:RemoveBloatware }
+                    elseif ($actionRef -eq 'disable-bing-search') { $ok = & $Global:DisableBingSearch }
                     else { Write-Log "Unknown action: $($actionRef)" -Level ERROR }
 
                     & $Global:SetStatus (if ($ok) { "Tweak applied ✓" } else { "Failed — see log" })
