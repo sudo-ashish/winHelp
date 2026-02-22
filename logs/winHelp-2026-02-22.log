@@ -81,3 +81,27 @@
 [2026-02-22 12:28:36] [DEBUG] Loaded config: tweaks.json
 [2026-02-22 12:28:36] [DEBUG] Theme applied: Dark
 [2026-02-22 12:28:36] [DEBUG] winget available: True (v1.12.460)
+
+============================================================
+=== winHelp Session Started: 2026-02-22 12:34:01 ===
+============================================================
+[2026-02-22 12:34:01] [DEBUG] Loaded config: packages.json
+[2026-02-22 12:34:01] [DEBUG] Loaded config: extensions.json
+[2026-02-22 12:34:01] [DEBUG] Loaded config: backup.json
+[2026-02-22 12:34:01] [DEBUG] Loaded config: ui.json
+[2026-02-22 12:34:01] [DEBUG] Loaded config: ide.json
+[2026-02-22 12:34:01] [DEBUG] Loaded config: tweaks.json
+[2026-02-22 12:34:01] [DEBUG] Theme applied: Dark
+[2026-02-22 12:34:01] [DEBUG] PS7 installed: True (version: 7.5.4)
+[2026-02-22 12:34:02] [DEBUG] PS7 installed: True (version: 7.5.4)
+
+============================================================
+=== winHelp Session Started: 2026-02-22 12:38:37 ===
+============================================================
+[2026-02-22 12:38:37] [DEBUG] Loaded config: packages.json
+[2026-02-22 12:38:37] [DEBUG] Loaded config: backup.json
+[2026-02-22 12:38:37] [DEBUG] Loaded config: ide.json
+[2026-02-22 12:38:37] [DEBUG] Loaded config: extensions.json
+[2026-02-22 12:38:37] [DEBUG] Loaded config: ui.json
+[2026-02-22 12:38:37] [DEBUG] Loaded config: tweaks.json
+[2026-02-22 12:38:38] [DEBUG] PS7 installed: True (version: 7.5.4)
