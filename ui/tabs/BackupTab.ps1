@@ -1,4 +1,7 @@
-# ui/tabs/BackupTab.ps1 — Backup & Restore tab (stub, populated in Phase 4)
+# =====================================================================
+# ui/tabs/BackupTab.ps1 — Backup and Restore features
+# Provides: Initialize-BackupTab
+# =====================================================================
 
 function Initialize-BackupTab {
     param(
@@ -7,39 +10,155 @@ function Initialize-BackupTab {
     )
     $ContentArea.Children.Clear()
 
-    $panel = [System.Windows.Controls.StackPanel]::new()
-    $panel.VerticalAlignment = 'Center'
-    $panel.HorizontalAlignment = 'Center'
+    $appRoot = if ($Global:AppRoot) { $Global:AppRoot } else { Split-Path (Split-Path $PSScriptRoot) }
+    if (-not (Get-Command Invoke-BackupSnapshot -ErrorAction SilentlyContinue)) {
+        . "$appRoot\core\BackupManager.ps1"
+    }
 
-    $icon = [System.Windows.Controls.TextBlock]::new()
-    $icon.Text = "💾"
-    $icon.FontSize = 48
-    $icon.HorizontalAlignment = 'Center'
+    # Helper styles
+    function New-Section {
+        $b = [System.Windows.Controls.Border]::new()
+        $b.BorderBrush = $Window.TryFindResource('BorderColor')
+        $b.BorderThickness = [System.Windows.Thickness]::new(1)
+        $b.CornerRadius = [System.Windows.CornerRadius]::new(6)
+        $b.Padding = [System.Windows.Thickness]::new(14)
+        $b.Margin = [System.Windows.Thickness]::new(0, 0, 0, 12)
+        $b.Background = $Window.TryFindResource('ContentBackground')
+        $inner = [System.Windows.Controls.StackPanel]::new()
+        $b.Child = $inner
+        return $b, $inner
+    }
 
-    $label = [System.Windows.Controls.TextBlock]::new()
-    $label.Text = "Backup & Restore"
-    $label.FontSize = 20
-    $label.FontWeight = 'SemiBold'
-    $label.Foreground = $Window.TryFindResource('TextPrimary')
-    $label.HorizontalAlignment = 'Center'
-    $label.Margin = [System.Windows.Thickness]::new(0, 10, 0, 4)
+    function New-SectionHeader {
+        param([string]$Text)
+        $tb = [System.Windows.Controls.TextBlock]::new()
+        $tb.Text = $Text; $tb.FontSize = 14; $tb.FontWeight = 'Bold'
+        $tb.Foreground = $Window.TryFindResource('AccentColor')
+        $tb.Margin = [System.Windows.Thickness]::new(0, 0, 0, 10)
+        return $tb
+    }
 
-    $sub = [System.Windows.Controls.TextBlock]::new()
-    $sub.Text = "Snapshot and restore registry settings and configuration files"
-    $sub.FontSize = 13
-    $sub.Foreground = $Window.TryFindResource('TextMuted')
-    $sub.HorizontalAlignment = 'Center'
+    function New-Button {
+        param([string]$Label, [bool]$Accent = $false, [double]$Height = 36)
+        $btn = [System.Windows.Controls.Button]::new()
+        $btn.Content = $Label; $btn.Height = $Height; $btn.FontSize = 13
+        $btn.Cursor = [System.Windows.Input.Cursors]::Hand
+        $btn.Margin = [System.Windows.Thickness]::new(0, 4, 0, 4)
+        $btn.BorderThickness = [System.Windows.Thickness]::new(0)
+        $btn.Foreground = $Window.TryFindResource('TextPrimary')
+        $btn.Background = if ($Accent) { $Window.TryFindResource('AccentColor') } else { $Window.TryFindResource('ButtonHover') }
+        return $btn
+    }
 
-    $phase = [System.Windows.Controls.TextBlock]::new()
-    $phase.Text = "Coming in Phase 4"
-    $phase.FontSize = 11
-    $phase.Foreground = $Window.TryFindResource('AccentColor')
-    $phase.HorizontalAlignment = 'Center'
-    $phase.Margin = [System.Windows.Thickness]::new(0, 6, 0, 0)
+    $scroll = [System.Windows.Controls.ScrollViewer]::new()
+    $scroll.VerticalScrollBarVisibility = 'Auto'
+    $scroll.HorizontalScrollBarVisibility = 'Disabled'
+    $outer = [System.Windows.Controls.StackPanel]::new()
+    $outer.Margin = [System.Windows.Thickness]::new(4)
 
-    $panel.Children.Add($icon)  | Out-Null
-    $panel.Children.Add($label) | Out-Null
-    $panel.Children.Add($sub)   | Out-Null
-    $panel.Children.Add($phase) | Out-Null
-    $ContentArea.Children.Add($panel) | Out-Null
+    # ════════════════════════════════════════════════════════════
+    # SECTION 1 — Create Backup
+    # ════════════════════════════════════════════════════════════
+    $sec1, $sec1Inner = New-Section
+    $sec1Inner.Children.Add((New-SectionHeader "💾  Create Backup")) | Out-Null
+
+    $desc = [System.Windows.Controls.TextBlock]::new()
+    $desc.Text = "Create a new snapshot of registry keys and configuration files defined in config/backup.json."
+    $desc.FontSize = 12
+    $desc.Foreground = $Window.TryFindResource('TextMuted')
+    $desc.Margin = [System.Windows.Thickness]::new(0, 0, 0, 10)
+    $desc.TextWrapping = 'Wrap'
+    $sec1Inner.Children.Add($desc) | Out-Null
+
+    $btnBackup = New-Button "Create Backup Snapshot" -Accent $true
+    $sec1Inner.Children.Add($btnBackup) | Out-Null
+
+    $outer.Children.Add($sec1) | Out-Null
+
+    # ════════════════════════════════════════════════════════════
+    # SECTION 2 — Restore Snapshot
+    # ════════════════════════════════════════════════════════════
+    $sec2, $sec2Inner = New-Section
+    $sec2Inner.Children.Add((New-SectionHeader "🔄  Restore Snapshot")) | Out-Null
+
+    $btnRefresh = New-Button "Refresh Snapshot List" -Height 30
+    $sec2Inner.Children.Add($btnRefresh) | Out-Null
+
+    $lbSnaps = [System.Windows.Controls.ListBox]::new()
+    $lbSnaps.SelectionMode = [System.Windows.Controls.SelectionMode]::Single
+    $lbSnaps.Height = 120
+    $lbSnaps.Background = $Window.TryFindResource('InputBackground')
+    $lbSnaps.Foreground = $Window.TryFindResource('TextPrimary')
+    $lbSnaps.BorderBrush = $Window.TryFindResource('BorderColor')
+    $lbSnaps.Margin = [System.Windows.Thickness]::new(0, 4, 0, 6)
+    $sec2Inner.Children.Add($lbSnaps) | Out-Null
+
+    $btnRestore = New-Button "Restore Selected Snapshot" -Accent $true
+    $sec2Inner.Children.Add($btnRestore) | Out-Null
+
+    $outer.Children.Add($sec2) | Out-Null
+
+    $scroll.Content = $outer
+    $ContentArea.Children.Add($scroll) | Out-Null
+
+    # ── Handlers ───────────────────────────────────────────────
+
+    function Update-Snapshots {
+        $lbSnaps.Items.Clear()
+        $snaps = Get-BackupSnapshots
+        foreach ($snap in $snaps) {
+            $item = [System.Windows.Controls.ListBoxItem]::new()
+            $item.Content = "$($snap.Name) ($($snap.Date.ToString('g')))"
+            $item.Tag = $snap.Path
+            $lbSnaps.Items.Add($item) | Out-Null
+        }
+        if ($lbSnaps.Items.Count -gt 0) { $lbSnaps.SelectedIndex = 0 }
+    }
+
+    $btnRefresh.Add_Click({ Update-Snapshots })
+
+    $btnBackup.Add_Click({
+            $btnBackup.IsEnabled = $false
+            & $Global:SetStatus "Creating backup snapshot..."
+            $res = Invoke-BackupSnapshot
+            if ($res -and $res.Success) {
+                & $Global:SetStatus "Backup created: $($res.Name)"
+                [System.Windows.MessageBox]::Show("Backup created successfully at:`n$($res.Path)", "winHelp — Backup", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information) | Out-Null
+                Update-Snapshots
+            }
+            else {
+                & $Global:SetStatus "Backup failed — see log"
+                [System.Windows.MessageBox]::Show("Backup failed. Check logs for details.", "winHelp — Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error) | Out-Null
+            }
+            $btnBackup.IsEnabled = $true
+        })
+
+    $btnRestore.Add_Click({
+            $selected = $lbSnaps.SelectedItem
+            if ($null -eq $selected) {
+                [System.Windows.MessageBox]::Show("Please select a snapshot to restore.", "winHelp", [System.Windows.MessageBoxButton]::OK) | Out-Null
+                return
+            }
+
+            $snapName = $selected.Content -replace ' \(.*\)$', ''
+            $result = [System.Windows.MessageBox]::Show("Are you sure you want to restore snapshot:`n`n$snapName`n`nWarning: Current configurations will be overwritten.", "Confirm Restore", [System.Windows.MessageBoxButton]::OKCancel, [System.Windows.MessageBoxImage]::Warning)
+            if ($result -ne 'OK') { return }
+
+            $btnRestore.IsEnabled = $false
+            & $Global:SetStatus "Restoring from snapshot: $snapName..."
+        
+            $ok = Invoke-RestoreSnapshot -SnapshotPath $selected.Tag
+            if ($ok) {
+                & $Global:SetStatus "Restore completed successfully."
+                [System.Windows.MessageBox]::Show("Restore completed section by section. Check logs for detail.", "winHelp — Restore", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information) | Out-Null
+            }
+            else {
+                & $Global:SetStatus "Restore failed — see log"
+                [System.Windows.MessageBox]::Show("Restore hit an error. Check logs for detail.", "winHelp — Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error) | Out-Null
+            }
+            $btnRestore.IsEnabled = $true
+        })
+
+    # Initial load
+    Update-Snapshots
 }

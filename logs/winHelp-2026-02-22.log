@@ -105,3 +105,26 @@
 [2026-02-22 12:38:37] [DEBUG] Loaded config: ui.json
 [2026-02-22 12:38:37] [DEBUG] Loaded config: tweaks.json
 [2026-02-22 12:38:38] [DEBUG] PS7 installed: True (version: 7.5.4)
+
+============================================================
+=== winHelp Session Started: 2026-02-22 12:54:30 ===
+============================================================
+[2026-02-22 12:54:30] [DEBUG] Loaded config: packages.json
+[2026-02-22 12:54:30] [DEBUG] Loaded config: backup.json
+[2026-02-22 12:54:30] [DEBUG] Loaded config: tweaks.json
+[2026-02-22 12:54:30] [DEBUG] Loaded config: ide.json
+[2026-02-22 12:54:30] [DEBUG] Loaded config: extensions.json
+[2026-02-22 12:54:31] [DEBUG] Loaded config: ui.json
+[2026-02-22 12:54:31] [DEBUG] Theme applied: Dark
+[2026-02-22 12:54:31] [WARN] No tweaks configuration found.
+
+============================================================
+=== winHelp Session Started: 2026-02-22 12:55:50 ===
+============================================================
+[2026-02-22 12:55:50] [DEBUG] Loaded config: ide.json
+[2026-02-22 12:55:50] [DEBUG] Loaded config: packages.json
+[2026-02-22 12:55:50] [DEBUG] Loaded config: backup.json
+[2026-02-22 12:55:50] [DEBUG] Loaded config: tweaks.json
+[2026-02-22 12:55:50] [DEBUG] Loaded config: extensions.json
+[2026-02-22 12:55:50] [DEBUG] Loaded config: ui.json
+[2026-02-22 12:55:51] [DEBUG] Theme applied: Dark

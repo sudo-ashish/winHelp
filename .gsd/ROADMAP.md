@@ -90,8 +90,8 @@
 
 ---
 
-### Phase 5: Backup / Restore Tab + Tweaks Tab
-**Status**: ⬜ Not Started
+### Phase 4: Backup / Restore Tab + Tweaks Tab
+**Status**: ✅ Complete
 **Objective**: Implement Tabs 4 and 5 — versioned backup/restore system and Windows privacy tweaks.
 
 **Deliverables:**
