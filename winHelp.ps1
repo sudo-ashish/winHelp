@@ -21,7 +21,12 @@ if (-not $isAdmin -or -not $isPS7) {
     # If we are remote, we must save the script to execute it elevated/in pwsh
     if ([string]::IsNullOrEmpty($scriptToRun)) {
         $scriptToRun = Join-Path $env:TEMP "winHelp-bootstrap.ps1"
-        $MyInvocation.MyCommand.ScriptBlock | Set-Content -Path $scriptToRun -Encoding UTF8
+        if ([string]::IsNullOrWhiteSpace($MyInvocation.MyCommand.ScriptBlock)) {
+            Write-Host "winHelp: Fetching bootstrap script for elevation/PS7..." -ForegroundColor DarkGray
+            Invoke-RestMethod -Uri "https://raw.githubusercontent.com/sudo-ashish/winHelp/main/winHelp.ps1" | Set-Content -Path $scriptToRun -Encoding UTF8
+        } else {
+            $MyInvocation.MyCommand.ScriptBlock | Set-Content -Path $scriptToRun -Encoding UTF8
+        }
     }
 
     if (-not $isPS7) {
@@ -44,11 +49,22 @@ if (-not $isAdmin -or -not $isPS7) {
     
     if (-not $isAdmin) {
         Write-Host "winHelp: Relaunching as Administrator in PowerShell 7..." -ForegroundColor Yellow
-        Start-Process "pwsh.exe" -Verb RunAs -ArgumentList $argList
+        try {
+            Start-Process "pwsh.exe" -Verb RunAs -ArgumentList $argList -ErrorAction Stop
+        } catch {
+            Write-Host "`nwinHelp: Administrator privileges are required to provision this machine." -ForegroundColor Red
+            Write-Host "Please re-run the script and click 'Yes' on the User Account Control (UAC) prompt.`n" -ForegroundColor Red
+            exit 1
+        }
     }
     else {
         Write-Host "winHelp: Relaunching in PowerShell 7..." -ForegroundColor Yellow
-        Start-Process "pwsh.exe" -ArgumentList $argList
+        try {
+            Start-Process "pwsh.exe" -ArgumentList $argList -ErrorAction Stop
+        } catch {
+            Write-Host "`nwinHelp: Failed to launch PowerShell 7: $($_.Exception.Message)`n" -ForegroundColor Red
+            exit 1
+        }
     }
     exit 0
 }
